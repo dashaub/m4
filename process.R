@@ -79,7 +79,7 @@ tsFeatures <- function(x){
     return(df)
     }
 
-allData <- cleanM(allData)
+cleaned <- cleanM(allData)
 
 determineType <- function(df){
     # For each data file, determine if it is daily, hourly, weekly, etc
@@ -101,3 +101,11 @@ processFile <- function(x){
     dat = dat[, lapply(.SD, as.numeric)]
     return(dat)
     }
+
+
+################################################################################
+set.seed(314159265)
+someSeries <- sample(cleaned, 50)
+library(caret)
+library(ranger)
+# Prepare data for training
