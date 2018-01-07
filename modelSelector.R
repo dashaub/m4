@@ -6,6 +6,7 @@ library(tseries)
 library(e1071)
 library(uroot)
 library(Mcomp)
+library(doMC)
 
 # Load all the data files
 files <- dir(pattern = "*.csv")
@@ -93,17 +94,35 @@ cleaned <- sample(allData, 50)
 
 feat <- rbindlist(lapply(cleaned, FUN = function(x) tsFeatures(x$x)))
 
+
+
+
+# Setup parallel
+registerDoMC(6)
+
+
 mase <- matrix(NA, nrow = length(cleaned), ncol = length(allModels))
 colnames(mase) <- allModels
 count <- 1
 numSeries <- length(cleaned)
 for(series in cleaned){
+    # Naive method that wastefully refits all models
     print(paste0(count, " of ", numSeries))
-    for(method in allModels){
-        mod <- hybridModel(series$x, model = method, verbose = FALSE)
-        fc <- forecast(mod, h = length(series$xx), PI = FALSE)
-        mase[count, method] <- as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
-        rm(mod, fc)
+    res <- foreach(i = seq_along(allModels), .packages="forecastHybrid") %dopar%{
+        method = allModels[i]
+        # Nonseasonal
+        if(grepl("s", method) && frequency(series$xx) == 1){
+            NA
+        } else if(length(series$x) / frequency(series$x) <= 2){
+            # Too short
+            NA
+        } else{
+            mod <- hybridModel(series$x, model = method, verbose = FALSE)
+            fc <- forecast(mod, h = length(series$xx), PI = FALSE)
+            as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
+            }
         }
+    mase[count, ] <- unlist(res)
     count <- count + 1
     }
+stopImplicitCluster()
