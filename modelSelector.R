@@ -75,14 +75,35 @@ tsFeatures <- function(x){
                     sar = arima_order[3],
                     sma = arima_order[4],
                     n_diff = arima_order[6],
-                    n_s_diff = arima_order[7]
+                    n_s_diff = arima_order[7],
+                    num_periods = length(x) / frequency(x)
                     )
     options(warn=0)
     return(df)
     }
 
-cleaned <- cleanM(allData)
+allData <- cleanM(allData)
 
 # Prepare data for training
-set.seed(314159265)
-someSeries <- sample(cleaned, 50)
+set.seed(31415926)
+cleaned <- sample(allData, 50)
+#table(sapply(cleaned, FUN = function(x) x$type))
+#table(sapply(cleaned, FUN = function(x) x$period))
+#summary(sapply(cleaned, FUN = function(x) length(x$x)))
+
+feat <- rbindlist(lapply(cleaned, FUN = function(x) tsFeatures(x$x)))
+
+mase <- matrix(NA, nrow = length(cleaned), ncol = length(allModels))
+colnames(mase) <- allModels
+count <- 1
+numSeries <- length(cleaned)
+for(series in cleaned){
+    print(paste0(count, " of ", numSeries))
+    for(method in allModels){
+        mod <- hybridModel(series$x, model = method, verbose = FALSE)
+        fc <- forecast(mod, h = length(series$xx), PI = FALSE)
+        mase[count, method] <- as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
+        rm(mod, fc)
+        }
+    count <- count + 1
+    }
