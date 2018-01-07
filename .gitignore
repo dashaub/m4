@@ -10,8 +10,8 @@
 .RData
 
 # Data files
-.csv
-.rar
+*.csv
+*.rar
 
 # Example code in package build process
 *-Ex.R
