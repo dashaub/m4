@@ -126,3 +126,14 @@ for(series in cleaned){
     count <- count + 1
     }
 stopImplicitCluster()
+
+orders <- apply(mase, 2, FUN = order)
+means <- colMeans(mase, na.rm = TRUE)
+selectMods <- unique(c(allModels[order(means)][1:7], "aef", "at", "an", "aen", "aet"))
+labels <- factor(selectMods[apply(mase[, selectMods], 1,  FUN = which.min)])
+
+dat <- feat
+dat$labels <- labels
+set.seed(34)
+tc <- trainControl(method = "repeatedcv", number = 10, repeats = 3, search = "random")
+mod <- train(labels ~ ., data = dat, method = "ranger", trControl = tc, tuneLength = 3)
