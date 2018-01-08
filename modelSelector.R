@@ -13,12 +13,13 @@ library(Tcomp)
 files <- dir(pattern = "*.csv")
 
 # All possible models
-models <- c("a", "e", "f", "n", "s", "t")
-expandedGrid <- expand.grid(rep(list(models), times = length(models)))
-noDupes <- unique(apply(expandedGrid, 1, FUN = function(x) sort(unique(x))))
-allModels <- noDupes[sapply(noDupes, FUN = function(x) length(x) >= 1)]
-allModels <- sapply(allModels, FUN = function(x) paste0(x, collapse=""))
-allModels <- c(allModels, "z")
+#models <- c("a", "e", "f", "n", "s", "t")
+#expandedGrid <- expand.grid(rep(list(models), times = length(models)))
+#noDupes <- unique(apply(expandedGrid, 1, FUN = function(x) sort(unique(x))))
+#allModels <- noDupes[sapply(noDupes, FUN = function(x) length(x) >= 1)]
+#allModels <- sapply(allModels, FUN = function(x) paste0(x, collapse=""))
+#allModels <- c(allModels, "z")
+allModels <- c("a", "e", "f", "n", "s", "t", "z")
 
 tsFeatures <- function(x){
     options(warn=-1)
@@ -97,13 +98,13 @@ cleaned <- sample(allData, 50)
 #table(sapply(cleaned, FUN = function(x) x$period))
 #summary(sapply(cleaned, FUN = function(x) length(x$x)))
 
-feat <- rbindlist(lapply(cleaned, FUN = function(x) tsFeatures(x$x)))
-
+features <- rbindlist(lapply(cleaned, FUN = function(x) tsFeatures(x$x)))
+save(features, file = "features.RData")
 
 
 
 # Setup parallel
-registerDoMC(6)
+registerDoMC(8)
 
 
 mase <- matrix(NA, nrow = length(cleaned), ncol = length(allModels))
@@ -157,7 +158,7 @@ for(series in cleaned){
     mase[count, ] <- unlist(res)
     count <- count + 1
     }
-stopImplicitCluster()
+#stopImplicitCluster()
 
 orders <- apply(mase, 2, FUN = order)
 means <- colMeans(mase, na.rm = TRUE)
@@ -170,4 +171,4 @@ dat$labels <- labels
 dat$type <- as.character(sapply(cleaned, FUN = function(x) x$type))
 set.seed(34)
 tc <- trainControl(method = "repeatedcv", number = 10, repeats = 3, search = "random")
-mod <- train(labels ~ ., data = dat, method = "ranger", trControl = tc, tuneLength = 100)
+mod <- train(labels ~ ., data = dat, method = "ranger", trControl = tc, tuneLength = 3)
