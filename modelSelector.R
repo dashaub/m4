@@ -163,11 +163,12 @@ means <- colMeans(mase, na.rm = TRUE)
 #selectMods <- unique(c(allModels[order(means)][1:7], "aef", "at", "an", "aen", "aet"))
 selectMods <- allModels
 labels <- factor(selectMods[apply(mase[, selectMods], 1,  FUN = which.min)])
+save(labels, file = "labels.RData")
 
 dat <- features
 dat$labels <- labels
 dat$type <- as.character(sapply(cleaned, FUN = function(x) x$type))
 set.seed(34)
-seeds <- sample(1:10^6, 10^6)
+seeds <- sample(1:(2*10^6), 2*10^6)
 tc <- trainControl(method = "repeatedcv", number = 10, repeats = 3, search = "random")
 mod <- train(labels ~ ., data = dat, method = "ranger", trControl = tc, tuneLength = 3)
