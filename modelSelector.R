@@ -89,11 +89,11 @@ cleanM <- function(mObj){
 data(M3)
 data(M1)
 allData <- c(M1, M3, tourism)
-allData <- cleanM(allData)
+cleaned <- cleanM(allData)
 
 # Prepare data for training
 set.seed(31415926)
-cleaned <- sample(allData, 50)
+#cleaned <- sample(allData, 50)
 #table(sapply(cleaned, FUN = function(x) x$type))
 #table(sapply(cleaned, FUN = function(x) x$period))
 #summary(sapply(cleaned, FUN = function(x) length(x$x)))
@@ -102,11 +102,9 @@ features <- rbindlist(lapply(cleaned, FUN = function(x) tsFeatures(x$x)))
 save(features, file = "features.RData")
 
 
-
-# Setup parallel
 registerDoMC(8)
-
-
+set.seed(50)
+#Evaluate accuracy of methods
 mase <- matrix(NA, nrow = length(cleaned), ncol = length(allModels))
 colnames(mase) <- allModels
 count <- 1
@@ -166,9 +164,10 @@ means <- colMeans(mase, na.rm = TRUE)
 selectMods <- allModels
 labels <- factor(selectMods[apply(mase[, selectMods], 1,  FUN = which.min)])
 
-dat <- feat
+dat <- features
 dat$labels <- labels
 dat$type <- as.character(sapply(cleaned, FUN = function(x) x$type))
 set.seed(34)
+seeds <- sample(1:10^6, 10^6)
 tc <- trainControl(method = "repeatedcv", number = 10, repeats = 3, search = "random")
 mod <- train(labels ~ ., data = dat, method = "ranger", trControl = tc, tuneLength = 3)
