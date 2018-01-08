@@ -7,36 +7,18 @@ library(e1071)
 library(uroot)
 library(Mcomp)
 library(doMC)
+library(Tcomp)
 
 # Load all the data files
 files <- dir(pattern = "*.csv")
-
-
-cleanM <- function(mObj){
-    for(i in seq_along(mObj)){
-        if(grepl("DEMOGR", mObj[[i]]$type, ignore.case = TRUE)){
-            mObj[[i]]$type <- "DEMOGRAPHIC"
-        } else if(grepl("INDUST", mObj[[i]]$type, ignore.case = TRUE)){
-            mObj[[i]]$type <- "INDUSTRY"
-        } else if(grepl("MACRO", mObj[[i]]$type, ignore.case = TRUE)){
-            mObj[[i]]$type <- "MACRO"
-        } else if(grepl("MICRO", mObj[[i]]$type, ignore.case = TRUE)){
-            mObj[[i]]$type <- "MICRO"
-            }
-        }
-    return(mObj)
-    }
-
-data(M3)
-data(M1)
-allData <- c(M1, M3)
 
 # All possible models
 models <- c("a", "e", "f", "n", "s", "t")
 expandedGrid <- expand.grid(rep(list(models), times = length(models)))
 noDupes <- unique(apply(expandedGrid, 1, FUN = function(x) sort(unique(x))))
-allModels <- noDupes[sapply(noDupes, FUN = function(x) length(x) >= 2)]
+allModels <- noDupes[sapply(noDupes, FUN = function(x) length(x) >= 1)]
 allModels <- sapply(allModels, FUN = function(x) paste0(x, collapse=""))
+allModels <- c(allModels, "z")
 
 tsFeatures <- function(x){
     options(warn=-1)
@@ -83,6 +65,29 @@ tsFeatures <- function(x){
     return(df)
     }
 
+cleanM <- function(mObj){
+    for(i in seq_along(mObj)){
+        if(grepl("DEMOGR", mObj[[i]]$type, ignore.case = TRUE)){
+            mObj[[i]]$type <- "DEMOGRAPHIC"
+        } else if(grepl("INDUST", mObj[[i]]$type, ignore.case = TRUE)){
+            mObj[[i]]$type <- "INDUSTRY"
+        } else if(grepl("MACRO", mObj[[i]]$type, ignore.case = TRUE)){
+            mObj[[i]]$type <- "MACRO"
+        } else if(grepl("MICRO", mObj[[i]]$type, ignore.case = TRUE)){
+            mObj[[i]]$type <- "MICRO"
+        } else if(mObj[[i]]$type == "TOURISM"){
+            mObj[[i]]$type <- "MACRO"
+            }
+        }
+        if(mObj[[i]]$period == "OTHER"){
+            mObj[[i]]$period <- "DAILY"
+            }
+    return(mObj)
+    }
+
+data(M3)
+data(M1)
+allData <- c(M1, M3, tourism)
 allData <- cleanM(allData)
 
 # Prepare data for training
@@ -116,7 +121,34 @@ for(series in cleaned){
         } else if(length(series$x) / frequency(series$x) <= 2){
             # Too short
             NA
-        } else{
+        } else if(method == "a"){
+            mod <- auto.arima(series$x)
+            fc <- forecast(mod, h = length(series$xx))
+            as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
+        } else if(method == "e"){
+            mod <- ets(series$x)
+            fc <- forecast(mod, h = length(series$xx))
+            as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
+        } else if(method == "f"){
+            mod <- thetam(series$x)
+            fc <- forecast(mod, h = length(series$xx))
+            as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
+        } else if(method == "n"){
+            mod <- nnetar(series$x)
+            fc <- forecast(mod, h = length(series$xx))
+            as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
+        } else if(method == "s"){
+            mod <- stlm(series$x)
+            fc <- forecast(mod, h = length(series$xx))
+            as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
+        }else if(method == "t"){
+            mod <- tbats(series$x)
+            fc <- forecast(mod, h = length(series$xx))
+            as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
+        } else if(method == "z"){
+            fc <- snaive(series$x, h = length(series$xx))
+            as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
+        }else{
             mod <- hybridModel(series$x, model = method, verbose = FALSE)
             fc <- forecast(mod, h = length(series$xx), PI = FALSE)
             as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
@@ -129,11 +161,13 @@ stopImplicitCluster()
 
 orders <- apply(mase, 2, FUN = order)
 means <- colMeans(mase, na.rm = TRUE)
-selectMods <- unique(c(allModels[order(means)][1:7], "aef", "at", "an", "aen", "aet"))
+#selectMods <- unique(c(allModels[order(means)][1:7], "aef", "at", "an", "aen", "aet"))
+selectMods <- allModels
 labels <- factor(selectMods[apply(mase[, selectMods], 1,  FUN = which.min)])
 
 dat <- feat
 dat$labels <- labels
+dat$type <- as.character(sapply(cleaned, FUN = function(x) x$type))
 set.seed(34)
 tc <- trainControl(method = "repeatedcv", number = 10, repeats = 3, search = "random")
-mod <- train(labels ~ ., data = dat, method = "ranger", trControl = tc, tuneLength = 3)
+mod <- train(labels ~ ., data = dat, method = "ranger", trControl = tc, tuneLength = 100)
