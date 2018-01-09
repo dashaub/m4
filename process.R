@@ -8,9 +8,28 @@ determineType <- function(df){
 
 getHorizon <- function(x){
     # Determine the forecast horizon
-    horizon <- c("H" = 48, "D" = 14, "W" = 13, "M" = 18, "Y" = 6)
+    horizon <- c("HOURLY" = 48, "DAILY" = 14, "WEEKLY" = 13, "MONTHLY" = 18, "YEARLY" = 6)
     return(horizon[x])
     }
+
+prepareDatasets(){
+    # Prepare data
+    datasets <- list(nn3, nn5, nngc1, gefcom2012_load, gefcom2012_temp, gefcom2012_wp)
+    NN3 <- list()
+    period <- "MONTHLY"
+    horizon <- getHorizon(period)
+    count <- 1
+    seriesNames <- names(nn3)
+    for(series in nn3){
+        endSlice = length(series) - horizon
+        trainSeries <- subset(series, end = endSlice)
+        testSeries <- subset(series, start = endSlice + 1)
+        NN3[[seriesNames[count]]]$x <- trainSeries
+        NN3[[seriesNames[count]]]$xx <- testSeries
+        NN3[[seriesNames[count]]]$period <- period
+        NN3[[seriesNames[count]]]$type <- "MICRO"
+        count <- count + 1
+        }
 
 processFile <- function(x){
     # Load the data, train a model, produce forecasts, and write results
