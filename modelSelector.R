@@ -28,12 +28,23 @@ allModels <- c("a", "e", "f", "n", "s", "t", "z")
 
 tsFeatures <- function(x){
     options(warn=-1)
+    adf <- adf.test(x)
     scaled <- scale(x)
     min_x = min(scaled)
     max_x = max(scaled)
     tsFreq <- frequency(x) > 1
     minx <- min(x)
-    logx <- log(ifelse(min(x) <= 0, x + abs(minx) + 10^-16, x))
+
+    # Log features
+    logx <- log2(x)
+    if(minx <= 0){
+        logx <- log2(x + abs(minx) + 10^-16)
+        }
+    log_var <- var(logx)
+    log_range <- max(logx) - min(logx)
+    log_skew <- abs(skewness(logx))
+    log_kurtosis <- kurtosis(logx)
+
     s_trend = ifelse(tsFreq,
                      as.numeric(abs(coef(tslm(x ~ trend + season, x))["trend"])),
                      as.numeric(abs(coef(tslm(x ~ trend, x))["trend"])))
@@ -85,7 +96,9 @@ tsFeatures <- function(x){
                     num_periods = length(x) / frequency(x),
                     entropy = entrpy,
                     abs_entropy = abs(entrpy),
-                    entropy_diff = entropy(diff(x)),
+                    # This produces NA
+                    #entropy_diff = entropy(diff(x)),
+                    # Boruta rejected
                     #discrete_entropy = entropy(discrete),
                     #discrete_median = sum(head(discrete, numBins / 2)) / sum(discrete),
                     entropy_mm = entropy(tabled, method = "MM"),
@@ -104,7 +117,11 @@ tsFeatures <- function(x){
                     pearson_statistic <- pearson$statistic,
                     pearson_p <- pearson$p.value,
                     sf_statistic <- sf$statistic,
-                    sf_p <- sf$p.value
+                    sf_p <- sf$p.value,
+                    log_var = log_var,
+                    log_range = log_range,
+                    log_skew = log_skew,
+                    log_kurtosis = log_kurtosis
                     )
     options(warn=0)
     return(df)
@@ -221,7 +238,9 @@ dat <- features
 #dat$labels <- labels
 dat$type <- as.character(sapply(cleaned, FUN = function(x) x$type))
 set.seed(34)
+b <- Boruta(x = dat, y = labels, doTrace = 1)
 seeds <- sample(1:(2*10^6), 2*10^6)
+set.seed(34)
 tc <- trainControl(method = "repeatedcv", number = 10, repeats = 5, search = "random")
-rangerMod <- train(x = dat, y = labels, method = "ranger", trControl = tc, tuneLength = 3)
+rangerMod <- train(x = dat, y = labels, method = "ranger", trControl = tc, tuneLength = 100)
 xgbtreeMod <- train(x = dat, y = labels, method = "xgbTree", trControl = tc, tuneLength = 3)
