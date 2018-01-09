@@ -1,13 +1,18 @@
 library(caret)
 library(ranger)
+library(Boruta)
 library(data.table)
 library(forecastHybrid)
 library(tseries)
 library(e1071)
 library(uroot)
+library(entropy)
+library(nortest)
+
 library(Mcomp)
 library(doMC)
 library(Tcomp)
+
 
 # Load all the data files
 files <- dir(pattern = "*.csv")
@@ -23,11 +28,12 @@ allModels <- c("a", "e", "f", "n", "s", "t", "z")
 
 tsFeatures <- function(x){
     options(warn=-1)
-    adf <- adf.test(x)
     scaled <- scale(x)
     min_x = min(scaled)
     max_x = max(scaled)
     tsFreq <- frequency(x) > 1
+    minx <- min(x)
+    logx <- log(ifelse(min(x) <= 0, x + abs(minx) + 10^-16, x))
     s_trend = ifelse(tsFreq,
                      as.numeric(abs(coef(tslm(x ~ trend + season, x))["trend"])),
                      as.numeric(abs(coef(tslm(x ~ trend, x))["trend"])))
@@ -38,7 +44,23 @@ tsFeatures <- function(x){
                             error = function(error_condition){
                                         auto.arima(x)$arma
                                       })
+    len = length(x)
+    unique_len = length(unique(x))
+    numBins = 11
+    discrete = discretize(AirPassengers, numBins = numBins)
+    entrpy = entropy(x, method = "ML")
+    tabled <- table(x)
+
+    # Nortest
+    ad <- ad.test(scaled)
+    cvm <- cvm.test(scaled)
+    lillie <- lillie.test(scaled)
+    pearson <- pearson.test(scaled)
+    sf <- sf.test(scaled)
+    # Build lots of features
     df = data.frame(len = length(x),
+                    unique_len = len,
+                    unique_ratio = unique_len / len,
                     ndiffs = ndiffs(x),
                     adf_statistic = as.numeric(adf$statistic),
                     adf_p = as.numeric(adf$p.value),
@@ -60,7 +82,29 @@ tsFeatures <- function(x){
                     sma = arima_order[4],
                     n_diff = arima_order[6],
                     n_s_diff = arima_order[7],
-                    num_periods = length(x) / frequency(x)
+                    num_periods = length(x) / frequency(x),
+                    entropy = entrpy,
+                    abs_entropy = abs(entrpy),
+                    entropy_diff = entropy(diff(x)),
+                    #discrete_entropy = entropy(discrete),
+                    #discrete_median = sum(head(discrete, numBins / 2)) / sum(discrete),
+                    entropy_mm = entropy(tabled, method = "MM"),
+                    entropy_jeffreys = entropy(tabled, method = "Jeffreys"),
+                    entropy_laplace = entropy(tabled, method = "Laplace"),
+                    entropy_sg = entropy(tabled, method = "SG"),
+                    entropy_minimax = entropy(tabled, method = "minimax"),
+                    entropy_cs = entropy(tabled, method = "CS"),
+                    spectral = findfrequency(x),
+                    ad_statistic <- ad$statistic,
+                    ad_p <- ad$p.value,
+                    cvm_statistic <- cvm$statistic,
+                    cvm_p <- cvm$p.value,
+                    lillie_statistic <- lillie$statistic,
+                    lillie_p <- lillie$p.value,
+                    pearson_statistic <- pearson$statistic,
+                    pearson_p <- pearson$p.value,
+                    sf_statistic <- sf$statistic,
+                    sf_p <- sf$p.value
                     )
     options(warn=0)
     return(df)
@@ -81,7 +125,7 @@ cleanM <- function(mObj){
             }
         }
         if(mObj[[i]]$period == "OTHER"){
-            mObj[[i]]$period <- "DAILY"
+            #mObj[[i]]$period <- "DAILY"
             }
     return(mObj)
     }
@@ -90,15 +134,23 @@ data(M3)
 data(M1)
 allData <- c(M1, M3, tourism)
 cleaned <- cleanM(allData)
+# Shuffle data so it distributes evenly for parallel feature extraction
+set.seed(31415926)
+cleaned <- rclean <- sample(cleaned, size = length(cleaned), replace = FALSE)
 
 # Prepare data for training
-set.seed(31415926)
+
 #cleaned <- sample(allData, 50)
 #table(sapply(cleaned, FUN = function(x) x$type))
 #table(sapply(cleaned, FUN = function(x) x$period))
 #summary(sapply(cleaned, FUN = function(x) length(x$x)))
 
-features <- rbindlist(lapply(cleaned, FUN = function(x) tsFeatures(x$x)))
+cl <- makeForkCluster(8)
+features <- rbindlist(parLapply(cl = cl, X = cleaned, fun = function(x) tsFeatures(x$x)))
+#r_features <- rbindlist(parLapply(cl = cl, X = rclean, fun = function(x) tsFeatures(x$x)))
+#lb_features <- rbindlist(parLapplyLB(cl = cl, X = cleaned, fun = function(x) tsFeatures(x$x)))
+#feat <- rbindlist(mclapply(cleaned, FUN = function(x) tsFeatures(x$x), mc.cores = 8))
+#features_b <- rbindlist(lapply(cleaned, FUN = function(x) tsFeatures(x$x)))
 save(features, file = "features.RData")
 
 
@@ -166,9 +218,10 @@ labels <- factor(selectMods[apply(mase[, selectMods], 1,  FUN = which.min)])
 save(labels, file = "labels.RData")
 
 dat <- features
-dat$labels <- labels
+#dat$labels <- labels
 dat$type <- as.character(sapply(cleaned, FUN = function(x) x$type))
 set.seed(34)
 seeds <- sample(1:(2*10^6), 2*10^6)
-tc <- trainControl(method = "repeatedcv", number = 10, repeats = 3, search = "random")
-mod <- train(labels ~ ., data = dat, method = "ranger", trControl = tc, tuneLength = 3)
+tc <- trainControl(method = "repeatedcv", number = 10, repeats = 5, search = "random")
+rangerMod <- train(x = dat, y = labels, method = "ranger", trControl = tc, tuneLength = 3)
+xgbtreeMod <- train(x = dat, y = labels, method = "xgbTree", trControl = tc, tuneLength = 3)
