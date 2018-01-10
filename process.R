@@ -12,24 +12,33 @@ getHorizon <- function(x){
     return(horizon[x])
     }
 
-prepareDatasets(){
-    # Prepare data
-    datasets <- list(nn3, nn5, nngc1, gefcom2012_load, gefcom2012_temp, gefcom2012_wp)
-    NN3 <- list()
-    period <- "MONTHLY"
+
+prepareM <- function(data, period, type, names){
+    seriesList <- list()
     horizon <- getHorizon(period)
     count <- 1
-    seriesNames <- names(nn3)
-    for(series in nn3){
+    for(series in data){
         endSlice = length(series) - horizon
         trainSeries <- subset(series, end = endSlice)
         testSeries <- subset(series, start = endSlice + 1)
-        NN3[[seriesNames[count]]]$x <- trainSeries
-        NN3[[seriesNames[count]]]$xx <- testSeries
-        NN3[[seriesNames[count]]]$period <- period
-        NN3[[seriesNames[count]]]$type <- "MICRO"
+        seriesList[[seriesNames[count]]]$x <- trainSeries
+        seriesList[[seriesNames[count]]]$xx <- testSeries
+        seriesList[[seriesNames[count]]]$period <- period
+        seriesList[[seriesNames[count]]]$type <- "MICRO"
         count <- count + 1
         }
+    return(seriesList)
+    }
+
+prepareDatasets <- function(){
+    # Prepare data
+    datasets <- list(nn3, nn5, nngc1, gefcom2012_load, gefcom2012_temp, gefcom2012_wp)
+    seriesNames <- names(nn3)
+    NN3 <- prepareM(data = nn3, period = "MONTHLY", type = "OTHER", names = seriesNames)
+    seriesNames <- names(nn5)
+    NN5 <- prepareM(data = nn5, period = "DAILY", type = "OTHER", names = seriesNames)
+    # nngc1 placeholder
+    
 
 processFile <- function(x){
     # Load the data, train a model, produce forecasts, and write results
