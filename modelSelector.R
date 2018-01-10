@@ -72,14 +72,17 @@ tsFeatures <- function(x){
     # MA features
     ma3 <- ma(x, order = 3, centre = FALSE)
     ma3_mask <- !is.na(ma3)
-    ma7 <- ma(x, order = 7, centre = FALSE)
-    ma7_mask <- !is.na(ma7)
+    ma6 <- ma(x, order = 6, centre = FALSE)
+    ma6_mask <- !is.na(ma6)
     ma3_dat <- data.frame(ma3 = ma3[ma3_mask], y = x[ma3_mask])
-    ma7_dat <- data.frame(ma7 = ma7[ma7_mask], y = x[ma7_mask])
+    ma6_dat <- data.frame(ma6 = ma6[ma6_mask], y = x[ma6_mask])
     ma3_reg <- lm(y ~ ., data = ma3_dat)
-    ma7_reg <- lm(y ~ ., data = ma7_dat)
+    ma6_reg <- lm(y ~ ., data = ma6_dat)
     summary_ma3 <- summary(ma3_reg)
-    summary_ma7 <- summary(ma7_reg)
+    summary_ma6 <- summary(ma6_reg)
+
+    # AR features
+    a <- ar(x)
     # Build lots of features
     df = data.frame(len = length(x),
                     unique_len = len,
@@ -137,9 +140,11 @@ tsFeatures <- function(x){
                     ma3_r_sq = summary_ma3$adj.r.squared,
                     ma3_r_coef = coef(summary_ma3)[2,1],
                     ma3_coef_t = abs(coef(summary_ma3)[2,3]),
-                    ma7_r_sq = summary_ma7$adj.r.squared,
-                    ma7_r_coef = coef(summary_ma7)[2,1],
-                    ma7_coef_t = abs(coef(summary_ma7)[2,3])
+                    ma6_r_sq = summary_ma6$adj.r.squared,
+                    ma6_r_coef = coef(summary_ma6)[2,1],
+                    ma6_coef_t = abs(coef(summary_ma6)[2,3]),
+                    ar_order = a$order,
+                    ar_resids = sum(abs(residuals(a)), na.rm = TRUE) / sum(abs(x))
                     )
     options(warn=0)
     return(df)
@@ -157,11 +162,10 @@ cleanM <- function(mObj){
             mObj[[i]]$type <- "MICRO"
         } else if(mObj[[i]]$type == "TOURISM"){
             mObj[[i]]$type <- "MACRO"
-            }
-        }
-        if(mObj[[i]]$period == "OTHER"){
+        } else if(mObj[[i]]$period == "OTHER"){
             #mObj[[i]]$period <- "DAILY"
             }
+        }
     return(mObj)
     }
 
@@ -172,6 +176,9 @@ cleaned <- cleanM(allData)
 # Shuffle data so it distributes evenly for parallel feature extraction
 set.seed(31415926)
 cleaned <- rclean <- sample(cleaned, size = length(cleaned), replace = FALSE)
+# Remove short series
+shortSeries <- sapply(cleaned, FUN = function(x) length(x$x) <= 7)
+cleaned <- cleaned[!shortSeries]
 
 # Prepare data for training
 
@@ -181,7 +188,7 @@ cleaned <- rclean <- sample(cleaned, size = length(cleaned), replace = FALSE)
 #summary(sapply(cleaned, FUN = function(x) length(x$x)))
 
 cl <- makeForkCluster(8)
-features <- rbindlist(parLapply(cl = cl, X = cleaned, fun = function(x) tsFeatures(x$x)))
+features <- rbindlist(parLapplyLB(cl = cl, X = cleaned, fun = function(x) tsFeatures(x$x)))
 #r_features <- rbindlist(parLapply(cl = cl, X = rclean, fun = function(x) tsFeatures(x$x)))
 #lb_features <- rbindlist(parLapplyLB(cl = cl, X = cleaned, fun = function(x) tsFeatures(x$x)))
 #feat <- rbindlist(mclapply(cleaned, FUN = function(x) tsFeatures(x$x), mc.cores = 8))
@@ -189,6 +196,56 @@ features <- rbindlist(parLapply(cl = cl, X = cleaned, fun = function(x) tsFeatur
 save(features, file = "features.RData")
 
 
+
+# Fit multiple models and return the MASE
+fitModels <- function(x, models){
+    sapply(models, FUN = function(model) fitModel(x, method=model))
+    }
+
+# Fit a single model and return the MASE
+fitModel <- function(x, method){
+    if(grepl("s", method) && frequency(series$xx) == 1){
+        NA
+    } else if(length(series$x) / frequency(series$x) <= 2){
+        # Too short
+        NA
+    } else if(method == "a"){
+        mod <- auto.arima(series$x)
+        fc <- forecast(mod, h = length(series$xx))
+        as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
+    } else if(method == "e"){
+        mod <- ets(series$x)
+        fc <- forecast(mod, h = length(series$xx))
+        as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
+    } else if(method == "f"){
+        mod <- thetam(series$x)
+        fc <- forecast(mod, h = length(series$xx))
+        as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
+    } else if(method == "n"){
+        mod <- nnetar(series$x)
+        fc <- forecast(mod, h = length(series$xx))
+        as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
+    } else if(method == "s"){
+        mod <- stlm(series$x)
+        fc <- forecast(mod, h = length(series$xx))
+        as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
+    }else if(method == "t"){
+        mod <- tbats(series$x)
+        fc <- forecast(mod, h = length(series$xx))
+        as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
+    } else if(method == "z"){
+        fc <- snaive(series$x, h = length(series$xx))
+        as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
+    }else{
+        mod <- hybridModel(series$x, model = method, verbose = FALSE)
+        fc <- forecast(mod, h = length(series$xx), PI = FALSE)
+        as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
+        }
+    }
+res <- parLapplyLB(cl = cl, X = cleaned, fun = function(x) fitModels(x = x, models = allModels))
+
+#library(doParallel)
+#registerDoParallel(8)
 registerDoMC(8)
 set.seed(50)
 #Evaluate accuracy of methods
@@ -228,7 +285,7 @@ for(series in cleaned){
             fc <- forecast(mod, h = length(series$xx))
             as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
         }else if(method == "t"){
-            mod <- tbats(series$x)
+            mod <- tbats(series$x, num.cores = 4)
             fc <- forecast(mod, h = length(series$xx))
             as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
         } else if(method == "z"){
@@ -250,6 +307,7 @@ means <- colMeans(mase, na.rm = TRUE)
 #selectMods <- unique(c(allModels[order(means)][1:7], "aef", "at", "an", "aen", "aet"))
 selectMods <- allModels
 labels <- factor(selectMods[apply(mase[, selectMods], 1,  FUN = which.min)])
+worst <- factor(selectMods[apply(mase[, selectMods], 1,  FUN = which.max)])
 save(labels, file = "labels.RData")
 
 dat <- features
