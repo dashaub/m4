@@ -68,6 +68,18 @@ tsFeatures <- function(x){
     lillie <- lillie.test(scaled)
     pearson <- pearson.test(scaled)
     sf <- sf.test(scaled)
+
+    # MA features
+    ma3 <- ma(x, order = 3, centre = FALSE)
+    ma3_mask <- !is.na(ma3)
+    ma7 <- ma(x, order = 7, centre = FALSE)
+    ma7_mask <- !is.na(ma7)
+    ma3_dat <- data.frame(ma3 = ma3[ma3_mask], y = x[ma3_mask])
+    ma7_dat <- data.frame(ma7 = ma7[ma7_mask], y = x[ma7_mask])
+    ma3_reg <- lm(y ~ ., data = ma3_dat)
+    ma7_reg <- lm(y ~ ., data = ma7_dat)
+    summary_ma3 <- summary(ma3_reg)
+    summary_ma7 <- summary(ma7_reg)
     # Build lots of features
     df = data.frame(len = length(x),
                     unique_len = len,
@@ -121,7 +133,13 @@ tsFeatures <- function(x){
                     log_var = log_var,
                     log_range = log_range,
                     log_skew = log_skew,
-                    log_kurtosis = log_kurtosis
+                    log_kurtosis = log_kurtosis,
+                    ma3_r_sq = summary_ma3$adj.r.squared,
+                    ma3_r_coef = coef(summary_ma3)[2,1],
+                    ma3_coef_t = abs(coef(summary_ma3)[2,3]),
+                    ma7_r_sq = summary_ma7$adj.r.squared,
+                    ma7_r_coef = coef(summary_ma7)[2,1],
+                    ma7_coef_t = abs(coef(summary_ma7)[2,3])
                     )
     options(warn=0)
     return(df)
@@ -243,4 +261,4 @@ seeds <- sample(1:(2*10^6), 2*10^6)
 set.seed(34)
 tc <- trainControl(method = "repeatedcv", number = 10, repeats = 5, search = "random")
 rangerMod <- train(x = dat, y = labels, method = "ranger", trControl = tc, tuneLength = 100)
-xgbtreeMod <- train(x = dat, y = labels, method = "xgbTree", trControl = tc, tuneLength = 3)
+xgbtreeMod <- train(x = dat, y = labels, method = "xgbTree", trControl = tc, tuneLength = 100)
