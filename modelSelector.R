@@ -240,87 +240,65 @@ fitModel <- function(series, method){
 
 # Build features and labels
 cl <- makeForkCluster(8)
-features <- rbindlist(parLapplyLB(cl = cl, X = cleaned, fun = function(x) tsFeatures(x$x)))
+#features <- rbindlist(parLapplyLB(cl = cl, X = cleaned, fun = function(x) tsFeatures(x$x)))
+features <- rbindlist(pblapply(X = cleaned, FUN = function(x) tsFeatures(x$x), cl = cl))
 save(features, file = "features.RData")
 
-res <- parLapplyLB(cl = cl, X = cleaned, fun = function(x) fitModels(x = x, models = allModels))
-errors <- rbindlist(pblapply(X = cleaned, FUN = function(x) fitModels(x = x, models = allModels), cl = cl))
-
+#res <- parLapplyLB(cl = cl, X = cleaned, fun = function(x) fitModels(x = x, models = allModels))
+mase <- rbindlist(pblapply(X = cleaned,
+                           FUN = function(x) fitModels(x = x, models = allModels),
+                           cl = cl))
+save(mase, file = "mase.RData")
 
 
 #library(doParallel)
 #registerDoParallel(8)
-registerDoMC(8)
-set.seed(50)
-#Evaluate accuracy of methods
-mase <- matrix(NA, nrow = length(cleaned), ncol = length(allModels))
-colnames(mase) <- allModels
-count <- 1
-numSeries <- length(cleaned)
-for(series in cleaned){
-    # Naive method that wastefully refits all models
-    print(paste0(count, " of ", numSeries))
-    res <- foreach(i = seq_along(allModels), .packages="forecastHybrid") %dopar%{
-        method = allModels[i]
-        # Nonseasonal
-        if(grepl("s", method) && frequency(series$xx) == 1){
-            NA
-        } else if(length(series$x) / frequency(series$x) <= 2){
-            # Too short
-            NA
-        } else if(method == "a"){
-            mod <- auto.arima(series$x)
-            fc <- forecast(mod, h = length(series$xx))
-            as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
-        } else if(method == "e"){
-            mod <- ets(series$x)
-            fc <- forecast(mod, h = length(series$xx))
-            as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
-        } else if(method == "f"){
-            mod <- thetam(series$x)
-            fc <- forecast(mod, h = length(series$xx))
-            as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
-        } else if(method == "n"){
-            mod <- nnetar(series$x)
-            fc <- forecast(mod, h = length(series$xx))
-            as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
-        } else if(method == "s"){
-            mod <- stlm(series$x)
-            fc <- forecast(mod, h = length(series$xx))
-            as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
-        }else if(method == "t"){
-            mod <- tbats(series$x, num.cores = 4)
-            fc <- forecast(mod, h = length(series$xx))
-            as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
-        } else if(method == "z"){
-            fc <- snaive(series$x, h = length(series$xx))
-            as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
-        }else{
-            mod <- hybridModel(series$x, model = method, verbose = FALSE)
-            fc <- forecast(mod, h = length(series$xx), PI = FALSE)
-            as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
-            }
-        }
-    mase[count, ] <- unlist(res)
-    count <- count + 1
-    }
-#stopImplicitCluster()
+#registerDoMC(8)
 
-orders <- apply(mase, 2, FUN = order)
+
 means <- colMeans(mase, na.rm = TRUE)
-#selectMods <- unique(c(allModels[order(means)][1:7], "aef", "at", "an", "aen", "aet"))
-selectMods <- allModels
-labels <- factor(selectMods[apply(mase[, selectMods], 1,  FUN = which.min)])
-worst <- factor(selectMods[apply(mase[, selectMods], 1,  FUN = which.max)])
-save(labels, file = "labels.RData")
+sorted <- apply(mase, 1, FUN = sort)
 
+labels_first <- factor(sapply(sorted, FUN = function(x) names(x[1])))
+labels_second <- factor(sapply(sorted, FUN = function(x) names(x[2])))
+labels_third <- factor(sapply(sorted, FUN = function(x) names(x[3])))
+labels_second_worst <- factor(sapply(sorted, FUN = function(x) names(tail(x, 2)[1])))
+labels_worst <- factor(sapply(sorted, FUN = function(x) names(tail(x, 1))))
+save(labels_first, file = "labels_first.RData")
+save(labels_second, file = "labels_second.RData")
+save(labels_third, file = "labels_third.RData")
+save(labels_second_worst, file = "labels_second_worst.RData")
+save(labels_worst, file = "labels_worst.RData")
+
+
+# Feature selection
 dat <- features
-#dat$labels <- labels
 dat$type <- as.character(sapply(cleaned, FUN = function(x) x$type))
 set.seed(34)
-b <- Boruta(x = dat, y = labels, doTrace = 1)
-seeds <- sample(1:(2*10^6), 2*10^6)
-set.seed(34)
+b <- Boruta(x = dat, y = labels_worst, doTrace = 1)
+
+# Train models
+#registerDoMC(1)
 tc <- trainControl(method = "repeatedcv", number = 10, repeats = 5, search = "random")
-rangerMod <- train(x = dat, y = labels, method = "ranger", trControl = tc, tuneLength = 100)
-xgbtreeMod <- train(x = dat, y = labels, method = "xgbTree", trControl = tc, tuneLength = 100)
+numMod <- 250
+seed <- 50
+set.seed(seed)
+rangerModFirst <- train(x = dat, y = labels_first,
+                        method = "ranger", trControl = tc,tuneLength = numMod)
+save(rangerModFirst, "rangerModFirst.RData")
+set.seed(seed)
+rangerModSecond <- train(x = dat, y = labels_second,
+                         method = "ranger", trControl = tc,tuneLength = numMod)
+save(rangerModSecond, "rangerModSecond.RData")
+set.seed(seed)
+rangerModThird <- train(x = dat, y = labels_third,
+                        method = "ranger", trControl = tc,tuneLength = numMod)
+save(rangerModThird, "rangerModThird.RData")
+set.seed(seed)
+rangerModSecondWorst <- train(x = dat, y = labels_second_worst,
+                              method = "ranger", trControl = tc,tuneLength = numMod)
+save(rangerModSecondWorst, "rangerModSecondWorst.RData")
+set.seed(seed)
+rangerModWorst <- train(x = dat, y = labels_worst,
+                        method = "ranger", trControl = tc,tuneLength = numMod)
+save(rangerModWorst, "rangerModWorst.RData")
