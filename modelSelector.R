@@ -8,6 +8,7 @@ library(e1071)
 library(uroot)
 library(entropy)
 library(nortest)
+library(pbapply)
 
 library(Mcomp)
 library(doMC)
@@ -187,23 +188,16 @@ cleaned <- cleaned[!shortSeries]
 #table(sapply(cleaned, FUN = function(x) x$period))
 #summary(sapply(cleaned, FUN = function(x) length(x$x)))
 
-cl <- makeForkCluster(8)
-features <- rbindlist(parLapplyLB(cl = cl, X = cleaned, fun = function(x) tsFeatures(x$x)))
-#r_features <- rbindlist(parLapply(cl = cl, X = rclean, fun = function(x) tsFeatures(x$x)))
-#lb_features <- rbindlist(parLapplyLB(cl = cl, X = cleaned, fun = function(x) tsFeatures(x$x)))
-#feat <- rbindlist(mclapply(cleaned, FUN = function(x) tsFeatures(x$x), mc.cores = 8))
-#features_b <- rbindlist(lapply(cleaned, FUN = function(x) tsFeatures(x$x)))
-save(features, file = "features.RData")
-
-
-
 # Fit multiple models and return the MASE
 fitModels <- function(x, models){
-    sapply(models, FUN = function(model) fitModel(x, method=model))
+    results <- sapply(models, FUN = function(model) fitModel(x, method=model))
+    df <- data.frame(matrix(results, nrow = 1))
+    names(df) <- names(results)
+    return(df)
     }
 
 # Fit a single model and return the MASE
-fitModel <- function(x, method){
+fitModel <- function(series, method){
     if(grepl("s", method) && frequency(series$xx) == 1){
         NA
     } else if(length(series$x) / frequency(series$x) <= 2){
@@ -242,7 +236,17 @@ fitModel <- function(x, method){
         as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
         }
     }
+
+
+# Build features and labels
+cl <- makeForkCluster(8)
+features <- rbindlist(parLapplyLB(cl = cl, X = cleaned, fun = function(x) tsFeatures(x$x)))
+save(features, file = "features.RData")
+
 res <- parLapplyLB(cl = cl, X = cleaned, fun = function(x) fitModels(x = x, models = allModels))
+errors <- rbindlist(pblapply(X = cleaned, FUN = function(x) fitModels(x = x, models = allModels), cl = cl))
+
+
 
 #library(doParallel)
 #registerDoParallel(8)
