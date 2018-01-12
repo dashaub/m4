@@ -19,12 +19,12 @@ library(Tcomp)
 files <- dir(pattern = "*.csv")
 
 # All possible models
-#models <- c("a", "e", "f", "n", "s", "t")
-#expandedGrid <- expand.grid(rep(list(models), times = length(models)))
-#noDupes <- unique(apply(expandedGrid, 1, FUN = function(x) sort(unique(x))))
-#allModels <- noDupes[sapply(noDupes, FUN = function(x) length(x) >= 1)]
-#allModels <- sapply(allModels, FUN = function(x) paste0(x, collapse=""))
-#allModels <- c(allModels, "z")
+#~ models <- c("a", "e", "f", "n", "s", "t")
+#~ expandedGrid <- expand.grid(rep(list(models), times = length(models)))
+#~ noDupes <- unique(apply(expandedGrid, 1, FUN = function(x) sort(unique(x))))
+#~ allModels <- noDupes[sapply(noDupes, FUN = function(x) length(x) >= 1)]
+#~ allModels <- sapply(allModels, FUN = function(x) paste0(x, collapse=""))
+#~ allModels <- c(allModels, "z")
 allModels <- c("a", "e", "f", "n", "s", "t", "z")
 
 tsFeatures <- function(x){
@@ -84,6 +84,18 @@ tsFeatures <- function(x){
 
     # AR features
     a <- ar(x)
+    ar_fit <- ar(x, aic = FALSE, order.max = 7)$ar
+
+    # Differences
+    diffSeries <- diff(x)
+    posDiff <- length(which(diffSeries > 0)) / length(diffSeries)
+    eqDiff <- length(which(diffSeries == 0)) / length(diffSeries)
+    updn <- c(0, diff(sign(diffSeries)))
+    ix <- which(updn != 0)
+    signChange <- length(ix) / length(x)
+    diff_sd <- sd(diffSeries) / abs(mean(diffSeries))
+    autocor <- cor(x[-length(x)],x[-1])
+
     # Build lots of features
     df = data.frame(len = length(x),
                     unique_len = len,
@@ -145,8 +157,21 @@ tsFeatures <- function(x){
                     ma6_r_coef = coef(summary_ma6)[2,1],
                     ma6_coef_t = abs(coef(summary_ma6)[2,3]),
                     ar_order = a$order,
-                    ar_resids = sum(abs(residuals(a)), na.rm = TRUE) / sum(abs(x))
+                    ar_resids = sum(abs(residuals(a)), na.rm = TRUE) / sum(abs(x)),
+                    pos_diff = posDiff,
+                    eq_diff = eqDiff,
+                    sign_change = signChange,
+                    diff_sd = diff_sd,
+                    autocor <- autocor,
+                    ar_1 = ar_fit[1],
+                    ar_2 = ar_fit[2],
+                    ar_3 = ar_fit[3],
+                    ar_4 = ar_fit[4],
+                    ar_5 = ar_fit[5],
+                    ar_6 = ar_fit[6],
+                    ar_7 = ar_fit[7]
                     )
+    rownames(df) <- NULL
     options(warn=0)
     return(df)
     }
@@ -183,10 +208,10 @@ cleaned <- cleaned[!shortSeries]
 
 # Prepare data for training
 
-#cleaned <- sample(allData, 50)
-#table(sapply(cleaned, FUN = function(x) x$type))
-#table(sapply(cleaned, FUN = function(x) x$period))
-#summary(sapply(cleaned, FUN = function(x) length(x$x)))
+#~ cleaned <- sample(allData, 50)
+#~ table(sapply(cleaned, FUN = function(x) x$type))
+#~ table(sapply(cleaned, FUN = function(x) x$period))
+#~ summary(sapply(cleaned, FUN = function(x) length(x$x)))
 
 # Fit multiple models and return the MASE
 fitModels <- function(x, models){
@@ -242,7 +267,7 @@ fitModel <- function(series, method){
 cl <- makeForkCluster(8)
 #features <- rbindlist(parLapplyLB(cl = cl, X = cleaned, fun = function(x) tsFeatures(x$x)))
 features <- rbindlist(pblapply(X = cleaned, FUN = function(x) tsFeatures(x$x), cl = cl))
-save(features, file = "features.RData")
+save(features, file = "features.RData", compress = "xz", compression_level = 9)
 
 #res <- parLapplyLB(cl = cl, X = cleaned, fun = function(x) fitModels(x = x, models = allModels))
 mase <- rbindlist(pblapply(X = cleaned,
@@ -259,6 +284,7 @@ save(mase, file = "mase.RData")
 means <- colMeans(mase, na.rm = TRUE)
 sorted <- apply(mase, 1, FUN = sort)
 
+# Create labels
 labels_first <- factor(sapply(sorted, FUN = function(x) names(x[1])))
 labels_second <- factor(sapply(sorted, FUN = function(x) names(x[2])))
 labels_third <- factor(sapply(sorted, FUN = function(x) names(x[3])))
@@ -285,20 +311,25 @@ seed <- 50
 set.seed(seed)
 rangerModFirst <- train(x = dat, y = labels_first,
                         method = "ranger", trControl = tc,tuneLength = numMod)
-save(rangerModFirst, "rangerModFirst.RData")
+save(rangerModFirst, file = "rangerModFirst.RData",
+     compress = "xz", compression_level = 9)
 set.seed(seed)
 rangerModSecond <- train(x = dat, y = labels_second,
                          method = "ranger", trControl = tc,tuneLength = numMod)
-save(rangerModSecond, "rangerModSecond.RData")
+save(rangerModSecond, file = "rangerModSecond.RData",
+     compress = "xz", compression_level = 9)
 set.seed(seed)
 rangerModThird <- train(x = dat, y = labels_third,
                         method = "ranger", trControl = tc,tuneLength = numMod)
-save(rangerModThird, "rangerModThird.RData")
+save(rangerModThird, file = "rangerModThird.RData",
+     compress = "xz", compression_level = 9)
 set.seed(seed)
 rangerModSecondWorst <- train(x = dat, y = labels_second_worst,
                               method = "ranger", trControl = tc,tuneLength = numMod)
-save(rangerModSecondWorst, "rangerModSecondWorst.RData")
+save(rangerModSecondWorst, file = "rangerModSecondWorst.RData",
+     compress = "xz", compression_level = 9)
 set.seed(seed)
 rangerModWorst <- train(x = dat, y = labels_worst,
                         method = "ranger", trControl = tc,tuneLength = numMod)
-save(rangerModWorst, "rangerModWorst.RData")
+save(rangerModWorst, file = "rangerModWorst.RData",
+     compress = "xz", compression_level = 9)
