@@ -7,7 +7,7 @@
 .csv
 
 # Session Data files
-.RData
+*.RData
 
 # Data files
 *.csv

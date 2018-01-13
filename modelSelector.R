@@ -305,8 +305,8 @@ b <- Boruta(x = dat, y = labels_worst, doTrace = 1)
 
 # Train models
 #registerDoMC(1)
-tc <- trainControl(method = "repeatedcv", number = 10, repeats = 5, search = "random")
-numMod <- 250
+tc <- trainControl(method = "repeatedcv", number = 10, repeats = 3, search = "random")
+numMod <- 150
 seed <- 50
 set.seed(seed)
 rangerModFirst <- train(x = dat, y = labels_first,
