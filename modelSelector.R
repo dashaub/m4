@@ -86,6 +86,14 @@ tsFeatures <- function(x){
     a <- ar(x)
     ar_fit <- ar(x, aic = FALSE, order.max = 7)$ar
 
+    #PACF features
+    pacf_fit <- pacf(x, plot = FALSE, lag.max = 7)
+    acf_fit <- acf(x, plot = FALSE, lag.max = 7)
+    acf_sig <- sum(abs(acf_fit$acf) > 2 / sqrt(len))
+    pacf_sig <- sum(abs(pacf_fit$acf) > 2 / sqrt(len))
+    acf_sum <- sum(abs(acf_fit$acf))
+    pacf_sum <- sum(abs(pacf_fit$acf))
+
     # Differences
     diffSeries <- diff(x)
     posDiff <- length(which(diffSeries > 0)) / length(diffSeries)
@@ -169,7 +177,26 @@ tsFeatures <- function(x){
                     ar_4 = ar_fit[4],
                     ar_5 = ar_fit[5],
                     ar_6 = ar_fit[6],
-                    ar_7 = ar_fit[7]
+                    ar_7 = ar_fit[7],
+                    pacf_1 = pacf_fit$acf[1],
+                    pacf_2 = pacf_fit$acf[2],
+                    pacf_3 = pacf_fit$acf[3],
+                    pacf_4 = pacf_fit$acf[4],
+                    pacf_5 = pacf_fit$acf[5],
+                    pacf_6 = pacf_fit$acf[6],
+                    pacf_7 = pacf_fit$acf[7],
+                    # Ignore cov(x_t, x_t)
+                    acf_1 = acf_fit$acf[2],
+                    acf_2 = acf_fit$acf[3],
+                    acf_3 = acf_fit$acf[4],
+                    acf_4 = acf_fit$acf[5],
+                    acf_5 = acf_fit$acf[6],
+                    acf_6 = acf_fit$acf[7],
+                    acf_7 = acf_fit$acf[8],
+                    acf_sig = acf_sig,
+                    pacf_sig = pacf_sig,
+                    acf_sum = acf_sum,
+                    pacf_sum = pacf_sum
                     )
     rownames(df) <- NULL
     options(warn=0)
