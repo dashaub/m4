@@ -11,7 +11,10 @@ getHorizon <- function(x){
     horizon <- c("HOURLY" = 48, "DAILY" = 14, "WEEKLY" = 13, "MONTHLY" = 18, "YEARLY" = 6)
     return(horizon[x])
     }
-
+getHorizonFromFrequency <- function(x){
+	freq <- as.character(frequency(x))
+	switch(freq, "24" = 48, "365" = 14, "52" = 13, "12" = 18, "1" = 6)
+	}
 
 prepareM <- function(data, period, type, names){
     seriesList <- list()
