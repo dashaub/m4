@@ -1,3 +1,11 @@
+library(compiler)
+library(tseries)
+library(e1071)
+library(uroot)
+library(entropy)
+library(nortest)
+library(forecastHybrid)
+
 featuresHelper <- function(x){
     options(warn=-1)
     adf <- adf.test(x)
@@ -40,6 +48,9 @@ featuresHelper <- function(x){
     lillie <- lillie.test(scaled)
     pearson <- pearson.test(scaled)
     sf <- sf.test(scaled)
+    jb <- jarque.bera.test(x)
+    kpss_level <- kpss.test(x)
+    kpss_trend <- kpss.test(x)
 
     # MA features
     ma3 <- ma(x, order = 3, centre = FALSE)
@@ -78,6 +89,8 @@ featuresHelper <- function(x){
     diff_sd <- sd(diffSeries) / abs(mean(diffSeries))
     autocor <- cor(x[-length(x)],x[-1])
 
+    # GARCH
+    g <- garch(x, control = garch.control(trace = FALSE))
 
     # Build lots of features
     df = data.frame(len = length(x),
@@ -119,16 +132,16 @@ featuresHelper <- function(x){
                     entropy_minimax = entropy(tabled, method = "minimax"),
                     entropy_cs = entropy(tabled, method = "CS"),
                     spectral = findfrequency(x),
-                    ad_statistic <- ad$statistic,
-                    ad_p <- ad$p.value,
-                    cvm_statistic <- cvm$statistic,
-                    cvm_p <- cvm$p.value,
-                    lillie_statistic <- lillie$statistic,
-                    lillie_p <- lillie$p.value,
-                    pearson_statistic <- pearson$statistic,
-                    pearson_p <- pearson$p.value,
-                    sf_statistic <- sf$statistic,
-                    sf_p <- sf$p.value,
+                    ad_statistic = ad$statistic,
+                    ad_p = ad$p.value,
+                    cvm_statistic = cvm$statistic,
+                    cvm_p = cvm$p.value,
+                    lillie_statistic = lillie$statistic,
+                    lillie_p = lillie$p.value,
+                    pearson_statistic = pearson$statistic,
+                    pearson_p = pearson$p.value,
+                    sf_statistic = sf$statistic,
+                    sf_p = sf$p.value,
                     log_var = log_var,
                     log_range = log_range,
                     log_skew = log_skew,
@@ -145,7 +158,7 @@ featuresHelper <- function(x){
                     eq_diff = eqDiff,
                     sign_change = signChange,
                     diff_sd = diff_sd,
-                    autocor <- autocor,
+                    autocor = autocor,
                     ar_1 = ar_fit[1],
                     ar_2 = ar_fit[2],
                     ar_3 = ar_fit[3],
@@ -174,21 +187,31 @@ featuresHelper <- function(x){
                     pacf_sum = pacf_sum,
                     sharpe = sharpe(scaled),
                     sterling = sterling(scaled),
-                    runs_pos <- runs.test(factor(diffSeries >= 0))$p.value,
-                    runs_pos_less <- runs.test(factor(diffSeries >= 0), alternative = "less")$p.value,
-                    runs_pos_greater <- runs.test(factor(diffSeries >= 0), alternative = "greater")$p.value,
-                    runs_neg <- runs.test(factor(diffSeries <= 0))$p.value,
-                    runs_neg_less <- runs.test(factor(diffSeries <= 0), alternative = "less")$p.value,
-                    runs_neg_greater <- runs.test(factor(diffSeries <= 0), alternative = "greater")$p.value,
-                    bds_max <- max(bds_test$pvalue),
-                    bds_min <- max(bds_test$pvalue),
-                    bds_median <- mediain(bds_test$pvalue),
-                    bds_mean <- mean(bds_test$pvalue)
+                    runs_pos = runs.test(factor(diffSeries >= 0))$p.value,
+                    runs_pos_less = runs.test(factor(diffSeries >= 0), alternative = "less")$p.value,
+                    runs_pos_greater = runs.test(factor(diffSeries >= 0), alternative = "greater")$p.value,
+                    runs_neg = runs.test(factor(diffSeries <= 0))$p.value,
+                    runs_neg_less = runs.test(factor(diffSeries <= 0), alternative = "less")$p.value,
+                    runs_neg_greater = runs.test(factor(diffSeries <= 0), alternative = "greater")$p.value,
+                    bds_max = max(bds_test$p.value),
+                    bds_min = min(bds_test$p.value),
+                    bds_median = median(bds_test$p.value),
+                    bds_mean = mean(bds_test$p.value),
+                    max_drawdown = maxdrawdown(scaled),
+                    jb = jb$p.value,
+                    kpss_trend = kpss_trend$p.value,
+                    kpss_level = kpss_level$p.value,
+                    tv_test = terasvirta.test(x)$p.value,
+                    white = white.test(x)$p.value,
+                    garch_a0 = coef(g)["a0"],
+                    garch_a1 = coef(g)["a1"],
+                    garch_b0 = coef(g)["b1"]
                     )
     rownames(df) <- NULL
     options(warn=0)
     return(df)
     }
+featuresHelper <- cmpfun(featuresHelper, options = list(optimize = 3))
 
 tsFeatures <- function(x){
     noDiff <- featuresHelper(x)
@@ -197,3 +220,4 @@ tsFeatures <- function(x){
     names(diffFeatures) <- paste0("diff_", names(diffFeatures))
     return(cbind(noDiff, diffFeatures))
     }
+tsFeatures <- cmpfun(tsFeatures, options = list(optimize = 3))
