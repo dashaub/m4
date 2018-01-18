@@ -50,7 +50,7 @@ cleaned <- cleanM(allData)
 set.seed(31415926)
 cleaned <- rclean <- sample(cleaned, size = length(cleaned), replace = FALSE)
 # Remove short series
-shortSeries <- sapply(cleaned, FUN = function(x) length(x$x) <= 7)
+shortSeries <- sapply(cleaned, FUN = function(x) length(x$x) <= 9)
 cleaned <- cleaned[!shortSeries]
 
 # Prepare data for training
@@ -108,6 +108,14 @@ fitModel <- function(series, method){
         as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
         }
     }
+
+# Serial features for debugging
+res <- list()
+for(i in seq_along(cleaned)){
+    print(i)
+    x <- cleaned[[i]]$x
+    res[[i]] <- tsFeatures(x)
+}
 
 
 # Build features and labels

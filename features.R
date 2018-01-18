@@ -90,7 +90,11 @@ featuresHelper <- function(x){
     autocor <- cor(x[-length(x)],x[-1])
 
     # GARCH
-    g <- garch(x, control = garch.control(trace = FALSE))
+    g <- tryCatch({garch(x, control = garch.control(trace = FALSE))},
+                  error = function(error_condition){
+                      garch(x + rnorm(length(x), sd = sd(x)),
+                            control = garch.control(trace = FALSE))
+                      })
 
     # Build lots of features
     df = data.frame(len = length(x),
@@ -187,12 +191,22 @@ featuresHelper <- function(x){
                     pacf_sum = pacf_sum,
                     sharpe = sharpe(scaled),
                     sterling = sterling(scaled),
-                    runs_pos = runs.test(factor(diffSeries >= 0))$p.value,
-                    runs_pos_less = runs.test(factor(diffSeries >= 0), alternative = "less")$p.value,
-                    runs_pos_greater = runs.test(factor(diffSeries >= 0), alternative = "greater")$p.value,
-                    runs_neg = runs.test(factor(diffSeries <= 0))$p.value,
-                    runs_neg_less = runs.test(factor(diffSeries <= 0), alternative = "less")$p.value,
-                    runs_neg_greater = runs.test(factor(diffSeries <= 0), alternative = "greater")$p.value,
+#~                     runs_pos = runs.test(factor(diffSeries >= 0),
+#~                                                 levels = c(TRUE, FALSE))$p.value,
+#~                     runs_pos_less = runs.test(factor(diffSeries >= 0,
+#~                                                      levels = c(TRUE, FALSE)),
+#~                                          alternative = "less")$p.value,
+#~                     runs_pos_greater = runs.test(factor(diffSeries >= 0,
+#~                                                  levels = c(TRUE, FALSE)),
+#~                                          alternative = "greater")$p.value,
+#~                     runs_neg = runs.test(factor(diffSeries <= 0,
+#~                                                 levels = c(TRUE, FALSE)))$p.value,
+#~                     runs_neg_less = runs.test(factor(diffSeries <= 0,
+#~                                                      levels = c(TRUE, FALSE)),
+#~                                               alternative = "less")$p.value,
+#~                     runs_neg_greater = runs.test(factor(diffSeries <= 0,
+#~                                                         levels = c(TRUE, FALSE)),
+#~                                                  alternative = "greater")$p.value,
                     bds_max = max(bds_test$p.value),
                     bds_min = min(bds_test$p.value),
                     bds_median = median(bds_test$p.value),
