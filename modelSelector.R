@@ -27,7 +27,7 @@ files <- dir(pattern = "*.csv")
 #~ allModels <- c(allModels, "z")
 allModels <- c("a", "e", "f", "n", "s", "t", "z")
 
-tsFeatures <- function(x){
+featuresHelper <- function(x){
     options(warn=-1)
     adf <- adf.test(x)
     scaled <- scale(x)
@@ -86,13 +86,16 @@ tsFeatures <- function(x){
     a <- ar(x)
     ar_fit <- ar(x, aic = FALSE, order.max = 7)$ar
 
-    #PACF features
+    #ACF features
     pacf_fit <- pacf(x, plot = FALSE, lag.max = 7)
     acf_fit <- acf(x, plot = FALSE, lag.max = 7)
     acf_sig <- sum(abs(acf_fit$acf) > 2 / sqrt(len))
     pacf_sig <- sum(abs(pacf_fit$acf) > 2 / sqrt(len))
     acf_sum <- sum(abs(acf_fit$acf))
     pacf_sum <- sum(abs(pacf_fit$acf))
+
+    # BDS
+    bds_test <- bds.test(x)
 
     # Differences
     diffSeries <- diff(x)
@@ -103,6 +106,7 @@ tsFeatures <- function(x){
     signChange <- length(ix) / length(x)
     diff_sd <- sd(diffSeries) / abs(mean(diffSeries))
     autocor <- cor(x[-length(x)],x[-1])
+
 
     # Build lots of features
     df = data.frame(len = length(x),
@@ -196,11 +200,31 @@ tsFeatures <- function(x){
                     acf_sig = acf_sig,
                     pacf_sig = pacf_sig,
                     acf_sum = acf_sum,
-                    pacf_sum = pacf_sum
+                    pacf_sum = pacf_sum,
+                    sharpe = sharpe(scaled),
+                    sterling = sterling(scaled),
+                    runs_pos <- runs.test(factor(diffSeries >= 0))$p.value,
+                    runs_pos_less <- runs.test(factor(diffSeries >= 0), alternative = "less")$p.value,
+                    runs_pos_greater <- runs.test(factor(diffSeries >= 0), alternative = "greater")$p.value,
+                    runs_neg <- runs.test(factor(diffSeries <= 0))$p.value,
+                    runs_neg_less <- runs.test(factor(diffSeries <= 0), alternative = "less")$p.value,
+                    runs_neg_greater <- runs.test(factor(diffSeries <= 0), alternative = "greater")$p.value,
+                    bds_max <- max(bds_test$pvalue),
+                    bds_min <- max(bds_test$pvalue),
+                    bds_median <- mediain(bds_test$pvalue),
+                    bds_mean <- mean(bds_test$pvalue),
                     )
     rownames(df) <- NULL
     options(warn=0)
     return(df)
+    }
+
+tsFeatures <- function(x){
+    noDiff <- featuresHelper(x)
+    diffSeries <- diff(x)
+    diffFeatures <- featuresHelper(diffSeries)
+    names(diffFeatures) <- paste0("diff_", names(diffFeatures))
+    return(cbind(noDiff, diffFeatures))
     }
 
 cleanM <- function(mObj){
