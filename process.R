@@ -1,6 +1,3 @@
-
-
-
 determineType <- function(df){
     # For each data file, determine if it is daily, hourly, weekly, etc
     return(substr(head(df$V1, 1), start = 0, 1))
@@ -12,9 +9,9 @@ getHorizon <- function(x){
     return(horizon[x])
     }
 getHorizonFromFrequency <- function(x){
-	freq <- as.character(frequency(x))
-	switch(freq, "24" = 48, "365" = 14, "52" = 13, "12" = 18, "1" = 6)
-	}
+    freq <- as.character(frequency(x))
+    switch(freq, "24" = 48, "365" = 14, "52" = 13, "12" = 18, "1" = 6)
+    }
 
 prepareM <- function(data, period, type, names){
     seriesList <- list()
@@ -41,7 +38,7 @@ prepareDatasets <- function(){
     seriesNames <- names(nn5)
     NN5 <- prepareM(data = nn5, period = "DAILY", type = "OTHER", names = seriesNames)
     # nngc1 placeholder
-    
+}
 
 processFile <- function(x){
     # Load the data, train a model, produce forecasts, and write results
@@ -52,6 +49,3 @@ processFile <- function(x){
     dat = dat[, lapply(.SD, as.numeric)]
     return(dat)
     }
-
-
-################################################################################

@@ -47,22 +47,23 @@ data(M3)
 data(M1)
 allData <- c(M1, M3, tourism)
 if(require(tscompdata)){
-	tscompdataPrepare(){
-		timeseries <- list(nn3, nn5, nngc1, gefcom2012_load, gefcom2012_temp, gefcom2012_wp)
-		}
-	}
+    tscompdataPrepare(){
+        timeseries <- list(nn3, nn5, nngc1, gefcom2012_load, gefcom2012_temp, gefcom2012_wp)
+        }
+    nn3Clean <- lapply(nn3, FUN = function(x) createMObject(x, type = "MICRO"))
+    }
 
 createMObject <- function(x, type){
-	xClean <- na.interp(x)
-	tsLength <- length(x)
-	horizon <- getHorizonFromFrequency(xClean)
-	testSet <- subset(xClean, start = tsLength - horizon + 1)
-	trainSet <- subset(xClean, end = tsLength - horizon)
-	returnList <- list(x = trainSet, x = testSet, h = horizon, n = length(trainSet), type = type)
-	return(returnList)
-	}
+    xClean <- na.interp(x)
+    tsLength <- length(x)
+    horizon <- getHorizonFromFrequency(xClean)
+    testSet <- subset(xClean, start = tsLength - horizon + 1)
+    trainSet <- subset(xClean, end = tsLength - horizon)
+    returnList <- list(x = trainSet, x = testSet, h = horizon, n = length(trainSet), type = type)
+    return(returnList)
+    }
 
-res <- lapply(nn3, FUN = function(x) createMObject(x, type = "MICRO"))
+
 cleaned <- cleanM(allData)
 # Shuffle data so it distributes evenly for parallel feature extraction
 set.seed(31415926)
