@@ -4,6 +4,7 @@ library(Boruta)
 library(data.table)
 library(forecastHybrid)
 library(pbapply)
+library(compiler)
 
 library(Mcomp)
 library(doMC)
@@ -67,6 +68,7 @@ fitModels <- function(x, models){
     names(df) <- names(results)
     return(df)
     }
+fitModels <- cmpfun(fitModels, options = list(optimize = 3))
 
 # Fit a single model and return the MASE
 fitModel <- function(series, method){
@@ -108,6 +110,7 @@ fitModel <- function(series, method){
         as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
         }
     }
+fitModel <- cmpfun(fitModel, options = list(optimize = 3))
 
 # Serial features for debugging
 res <- list()
@@ -155,8 +158,22 @@ save(labels_worst, file = "labels_worst.RData")
 # Feature selection
 dat <- features
 dat$type <- as.character(sapply(cleaned, FUN = function(x) x$type))
+maxRuns <- 100
 set.seed(34)
-b <- Boruta(x = dat, y = labels_worst, doTrace = 1)
+bFirst <- Boruta(x = dat, y = labels_first, maxRuns = maxRuns, doTrace = 1)
+save(bFirst, file = "b.RData", compress = "xz", compression_level = 9)
+set.seed(34)
+bSecond <- Boruta(x = dat, y = labels_second, maxRuns = maxRuns, doTrace = 1)
+save(bSecond, file = "b.RData", compress = "xz", compression_level = 9)
+set.seed(34)
+bThird <- Boruta(x = dat, y = labels_third, maxRuns = maxRuns, doTrace = 1)
+save(bThird, file = "b.RData", compress = "xz", compression_level = 9)
+set.seed(34)
+bWorst <- Boruta(x = dat, y = labels_worst, maxRuns = maxRuns, doTrace = 1)
+save(bWorst, file = "b.RData", compress = "xz", compression_level = 9)
+set.seed(34)
+bSecondWorst <- Boruta(x = dat, y = labels_second_worst, maxRuns = maxRuns, doTrace = 1)
+save(bSecondWorst, file = "b.RData", compress = "xz", compression_level = 9)
 
 # Train models
 #registerDoMC(1)
