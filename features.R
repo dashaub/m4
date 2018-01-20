@@ -96,6 +96,9 @@ featuresHelper <- function(x){
                             control = garch.control(trace = FALSE))
                       })
 
+    # outliers
+    outliers <- length(tsoutliers(x)$index)
+
     # Build lots of features
     df = data.frame(len = length(x),
                     unique_len = len,
@@ -219,7 +222,9 @@ featuresHelper <- function(x){
                     white = white.test(x)$p.value,
                     garch_a0 = coef(g)["a0"],
                     garch_a1 = coef(g)["a1"],
-                    garch_b0 = coef(g)["b1"]
+                    garch_b0 = coef(g)["b1"],
+                    outliers = outliers,
+                    outliers_per = outliers / len
                     )
     rownames(df) <- NULL
     options(warn=0)
@@ -232,6 +237,8 @@ tsFeatures <- function(x){
     diffSeries <- diff(x)
     diffFeatures <- featuresHelper(diffSeries)
     names(diffFeatures) <- paste0("diff_", names(diffFeatures))
-    return(cbind(noDiff, diffFeatures))
+    diff2Features <- featuresHelper(diff(diffSeries))
+    names(diff2Features) <- paste0("diff2_", names(diff2Features))
+    return(cbind(noDiff, diffFeatures, diff2Features))
     }
 tsFeatures <- cmpfun(tsFeatures, options = list(optimize = 3))

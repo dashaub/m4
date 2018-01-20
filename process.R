@@ -10,7 +10,7 @@ getHorizon <- function(x){
     }
 getHorizonFromFrequency <- function(x){
     freq <- as.character(frequency(x))
-    switch(freq, "24" = 48, "365" = 14, "52" = 13, "12" = 18, "1" = 6)
+    switch(freq, "24" = 48, "7" = 14, "52" = 13, "12" = 18, "1" = 6)
     }
 
 prepareM <- function(data, period, type, names){
