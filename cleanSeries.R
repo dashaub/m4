@@ -5,6 +5,10 @@ library(Mcomp)
 library(doMC)
 library(Tcomp)
 
+getHorizonFromFrequency <- function(x){
+    freq <- as.character(frequency(x))
+    switch(freq, "24" = 48, "7" = 14, "52" = 13, "12" = 18, "1" = 6)
+    }
 
 cleanM <- function(mObj){
     for(i in seq_along(mObj)){
