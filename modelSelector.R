@@ -219,6 +219,7 @@ tc <- trainControl(method = "repeatedcv", number = 10, repeats = 3, search = "ra
 numMod <- 150
 seed <- 50
 set.seed(seed)
+# 0.3353251
 rangerModFirst <- train(x = dat, y = labels_first,
                         method = "ranger", trControl = tc,tuneLength = numMod)
 save(rangerModFirst, file = "rangerModFirst.RData",

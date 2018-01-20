@@ -4,6 +4,7 @@ library(e1071)
 library(uroot)
 library(entropy)
 library(nortest)
+library(cpm)
 library(forecastHybrid)
 
 featuresHelper <- function(x){
@@ -96,8 +97,26 @@ featuresHelper <- function(x){
                             control = garch.control(trace = FALSE))
                       })
 
-    # outliers
+    # Outliers
     outliers <- length(tsoutliers(x)$index)
+
+    # Structural breaks
+    break_Student <- length(processStream(x, "Student")$changePoints)
+    break_Student_per <- break_Student / len
+    break_Bartlett <- length(processStream(x, "Bartlett")$changePoints)
+    break_Bartlett_per <- break_Bartlett / len
+    break_ExponentialAdjusted <- length(processStream(x, "ExponentialAdjusted")$changePoints)
+    break_ExponentialAdjusted_per <- break_ExponentialAdjusted / len
+    break_mw <- length(processStream(x, "Mann-Whitney")$changePoints)
+    break_mw_per <- break_mw / len
+    break_Mood <- length(processStream(x, "Mood")$changePoints)
+    break_Mood_per <- break_Mood / len
+    break_Lepage <- length(processStream(x, "Lepage")$changePoints)
+    break_Lepage_per <- break_Lepage / len
+    break_ks <- length(processStream(x, "Kolmogorov-Smirnov")$changePoints)
+    break_ks_per <- break_ks / len
+    break_cvm <- length(processStream(x, "Cramer-von-Mises")$changePoints)
+    break_cvm_per <- break_cvm / len
 
     # Build lots of features
     df = data.frame(len = length(x),
@@ -224,13 +243,45 @@ featuresHelper <- function(x){
                     garch_a1 = coef(g)["a1"],
                     garch_b0 = coef(g)["b1"],
                     outliers = outliers,
-                    outliers_per = outliers / len
+                    outliers_per = outliers / len,
+                    break_Student = break_Student,
+                    break_Student_per = break_Student_per,
+                    break_Bartlett = break_Bartlett,
+                    break_Bartlett_per = break_Bartlett_per,
+                    break_ExponentialAdjusted = break_ExponentialAdjusted,
+                    break_ExponentialAdjusted_per = break_ExponentialAdjusted_per,
+                    break_mw = break_mw,
+                    break_mw_per = break_mw_per,
+                    break_Mood = break_Mood,
+                    break_Mood_per = break_Mood_per,
+                    break_Lepage = break_Lepage,
+                    break_Lepage_per = break_Lepage_per,
+                    break_ks = break_ks,
+                    break_ks_per = break_ks_per,
+                    break_cvm = break_cvm,
+                    break_cvm_per = break_cvm_per
                     )
     rownames(df) <- NULL
     options(warn=0)
     return(df)
     }
 featuresHelper <- cmpfun(featuresHelper, options = list(optimize = 3))
+    break_Student <- length(processStream(x, "Student")$changePoints)
+    break_Student_per <- break_Student / len
+    break_Bartlett <- length(processStream(x, "Bartlett")$changePoints)
+    break_Bartlett_per <- break_Bartlett / len
+    break_ExponentialAdjusted <- length(processStream(x, "ExponentialAdjusted")$changePoints)
+    break_ExponentialAdjusted_per <- break_ExponentialAdjusted / len
+    break_mw <- length(processStream(x, "Mann-Whitney")$changePoints)
+    break_mw_per <- break_mw / len
+    break_Mood <- length(processStream(x, "Mood")$changePoints)
+    break_Mood_per <- break_Mood / len
+    break_Lepage <- length(processStream(x, "Lepage")$changePoints)
+    break_Lepage_per <- break_Lepage / len
+    break_ks <- length(processStream(x, "Kolmogorov-Smirnov")$changePoints)
+    break_ks_per <- break_ks / len
+    break_cvm <- length(processStream(x, "Cramer-von-Mises")$changePoints)
+    break_cvm_per <- break_cvm / len
 
 tsFeatures <- function(x){
     noDiff <- featuresHelper(x)
