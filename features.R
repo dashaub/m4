@@ -266,22 +266,7 @@ featuresHelper <- function(x){
     return(df)
     }
 featuresHelper <- cmpfun(featuresHelper, options = list(optimize = 3))
-    break_Student <- length(processStream(x, "Student")$changePoints)
-    break_Student_per <- break_Student / len
-    break_Bartlett <- length(processStream(x, "Bartlett")$changePoints)
-    break_Bartlett_per <- break_Bartlett / len
-    break_ExponentialAdjusted <- length(processStream(x, "ExponentialAdjusted")$changePoints)
-    break_ExponentialAdjusted_per <- break_ExponentialAdjusted / len
-    break_mw <- length(processStream(x, "Mann-Whitney")$changePoints)
-    break_mw_per <- break_mw / len
-    break_Mood <- length(processStream(x, "Mood")$changePoints)
-    break_Mood_per <- break_Mood / len
-    break_Lepage <- length(processStream(x, "Lepage")$changePoints)
-    break_Lepage_per <- break_Lepage / len
-    break_ks <- length(processStream(x, "Kolmogorov-Smirnov")$changePoints)
-    break_ks_per <- break_ks / len
-    break_cvm <- length(processStream(x, "Cramer-von-Mises")$changePoints)
-    break_cvm_per <- break_cvm / len
+
 
 tsFeatures <- function(x){
     noDiff <- featuresHelper(x)

@@ -1,15 +1,15 @@
-library(caret)
-library(ranger)
-library(Boruta)
 library(data.table)
-library(forecastHybrid)
 library(pbapply)
 library(compiler)
-
 library(Mcomp)
 library(doMC)
 library(Tcomp)
 
+library(forecastHybrid)
+
+library(caret)
+library(ranger)
+library(Boruta)
 
 # Load all the data files
 files <- dir(pattern = "*.csv")
@@ -86,7 +86,7 @@ shortSeries <- sapply(cleaned, FUN = function(x) length(x$x) <= 9)
 cleaned <- cleaned[!shortSeries]
 longSeries <- sapply(cleaned, FUN = function(x) length(x$x) > 5000)
 cleaned <- cleaned[!longSeries]
-
+save(cleaned, file = "cleaned.RData", compress = "xz", compression_level = 9)
 # Prepare data for training
 
 #~ cleaned <- sample(allData, 50)
@@ -220,6 +220,7 @@ numMod <- 150
 seed <- 50
 set.seed(seed)
 # 0.3353251
+# 177?
 rangerModFirst <- train(x = dat, y = labels_first,
                         method = "ranger", trControl = tc,tuneLength = numMod)
 save(rangerModFirst, file = "rangerModFirst.RData",
