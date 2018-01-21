@@ -25,8 +25,8 @@ allModels <- c("a", "e", "f", "n", "s", "t", "z")
 #~ summary(sapply(cleaned, FUN = function(x) length(x$x)))
 
 # Fit multiple models and return the MASE
-fitModels <- function(x, models){
-    results <- sapply(models, FUN = function(model) fitModel(x, method=model))
+fitModels <- function(x, models, lambda = FALSE){
+    results <- sapply(models, FUN = function(model) fitModel(x, method = model, lambda = lambda))
     df <- data.frame(matrix(results, nrow = 1))
     names(df) <- names(results)
     return(df)
@@ -34,18 +34,25 @@ fitModels <- function(x, models){
 fitModels <- cmpfun(fitModels, options = list(optimize = 3))
 
 # Fit a single model and return the MASE
-fitModel <- function(series, method){
+fitModel <- function(series, method, lambda = FALSE){
+    # Set lambda
+    if(lambda){
+        lambda <- BoxCox.lambda(series$x)
+    } else{
+        lambda <- NULL
+    }
+    # Too short for slm
     if(grepl("s", method) && frequency(series$xx) == 1){
         NA
     } else if(length(series$x) / frequency(series$x) <= 2){
         # Too short
         NA
     } else if(method == "a"){
-        mod <- auto.arima(series$x)
+        mod <- auto.arima(series$x, lambda = lambda)
         fc <- forecast(mod, h = length(series$xx))
         as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
     } else if(method == "e"){
-        mod <- ets(series$x)
+        mod <- ets(series$x, lambda = lambda)
         fc <- forecast(mod, h = length(series$xx))
         as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
     } else if(method == "f"){
@@ -53,19 +60,19 @@ fitModel <- function(series, method){
         fc <- forecast(mod, h = length(series$xx))
         as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
     } else if(method == "n"){
-        mod <- nnetar(series$x, MaxNWts = 10000)
+        mod <- nnetar(series$x, lambda = lambda, MaxNWts = 10000)
         fc <- forecast(mod, h = length(series$xx))
         as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
     } else if(method == "s"){
-        mod <- stlm(series$x)
+        mod <- stlm(series$x, lambda = lambda)
         fc <- forecast(mod, h = length(series$xx))
         as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
     }else if(method == "t"){
-        mod <- tbats(series$x)
+        mod <- tbats(series$x, lambda = lambda)
         fc <- forecast(mod, h = length(series$xx))
         as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
     } else if(method == "z"){
-        fc <- snaive(series$x, h = length(series$xx))
+        fc <- snaive(series$x, h = length(series$xx), lambda = lambda)
         as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
     }else{
         if(grepl("n", method)){
@@ -73,7 +80,8 @@ fitModel <- function(series, method){
         }else{
             maxwts <- NULL
             }
-        mod <- hybridModel(series$x, model = method, verbose = FALSE, n.args = maxwts)
+        mod <- hybridModel(series$x, model = method, lambda = lambda,
+                           verbose = FALSE, n.args = maxwts)
         fc <- forecast(mod, h = length(series$xx), PI = FALSE)
         as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"])
         }
@@ -97,10 +105,13 @@ save(features, file = "features.RData", compress = "xz", compression_level = 9)
 
 #res <- parLapplyLB(cl = cl, X = cleaned, fun = function(x) fitModels(x = x, models = allModels))
 mase <- rbindlist(pblapply(X = cleaned,
-                           FUN = function(x) fitModels(x = x, models = allModels),
+                           FUN = function(x) fitModels(x = x, models = allModels, lambda = FALSE),
                            cl = cl))
+mase_lambda <- rbindlist(pblapply(X = cleaned,
+                                  FUN = function(x) fitModels(x = x, models = allModels, lambda = TRUE),
+                                  cl = cl))
 save(mase, file = "mase.RData")
-
+save(mase_lambda, file = "mase_lambda.RData")
 
 #library(doParallel)
 #registerDoParallel(8)
@@ -111,6 +122,9 @@ means <- colMeans(mase, na.rm = TRUE)
 sorted <- apply(mase, 1, FUN = sort)
 
 # Create labels
+min_mase <- apply(mase, 1, FUN = function(x) min(x, na.rm = TRUE))
+min_lambda_mase <- apply(mase_lambda, 1, FUN = function(x) min(x, na.rm = TRUE)) 
+use_lambda <- factor(min_mase >= min_lambda_mase)
 labels_first <- factor(sapply(sorted, FUN = function(x) names(x[1])))
 labels_second <- factor(sapply(sorted, FUN = function(x) names(x[2])))
 labels_third <- factor(sapply(sorted, FUN = function(x) names(x[3])))
@@ -151,6 +165,10 @@ seed <- 50
 set.seed(seed)
 # 0.3353251
 # 177?
+lambdaMod <- train(x = dat, y = use_lambda,
+                        method = "ranger", trControl = tc,tuneLength = numMod)
+
+set.seed(seed)
 rangerModFirst <- train(x = dat, y = labels_first,
                         method = "ranger", trControl = tc,tuneLength = numMod)
 save(rangerModFirst, file = "rangerModFirst.RData",
