@@ -64,3 +64,35 @@ fitModel <- function(series, method, lambda = FALSE){
         }
     }
 fitModel <- cmpfun(fitModel, options = list(optimize = 3))
+
+fitThiefs <- function(series, lambda = FALSE){
+    models <- c("a", "e", "f", "n", "s", "t", "z")
+    h <- length(series$xx)
+    if(frequency(series$x) == 1){
+        nan <- rep(NA, 7)
+        names(nan) <- models
+        return(nan)
+        }
+       results <- list()
+       a <- thief(series$x, h = h, usemodel = "arima")
+       a <- as.numeric(accuracy(a, x = series$xx)["Test set", "MASE"])
+       e <- thief(series$x, h = h, usemodel = "ets")
+       e <- as.numeric(accuracy(e, x = series$xx)["Test set", "MASE"])
+       f <- thief(series$x, h = h, usemodel = "theta")
+       f <- as.numeric(accuracy(f, x = series$xx)["Test set", "MASE"])
+       n <- thief(series$x, h = h,
+                  forecastfunction = function(y, h, ...) forecast(nnetar(y), h = h))
+       n <- as.numeric(accuracy(n, x = series$xx)["Test set", "MASE"])
+       #s <- thief(series$x, h = length(x$xx), usemodel = "arima")
+       #s <- as.numeric(accuracy(a, x = series$xx)["Test set", "MASE"])
+       s <- NA
+       t <- thief(series$x, h = h,
+                  forecastfunction = function(y, h, ...) forecast(tbats(y), h = h))
+       t <- as.numeric(accuracy(t, x = series$xx)["Test set", "MASE"])
+       z <- thief(series$x, h = h, usemodel = "snaive")
+       z <- as.numeric(accuracy(z, x = series$xx)["Test set", "MASE"])
+       results <- c(a, e, f, n, s, t, z)
+       names(results) <- models
+    return(results)
+    }
+fitThiefs <- cmpfun(fitThiefs, options = list(optimize = 3))

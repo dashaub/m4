@@ -4,6 +4,9 @@ library(caret)
 library(ranger)
 library(Boruta)
 
+source("cleanSeries.R")
+source("features.R")
+
 # Load all the data files
 files <- dir(pattern = "*.csv")
 
@@ -46,6 +49,9 @@ mase <- rbindlist(pblapply(X = cleaned,
 mase_lambda <- rbindlist(pblapply(X = cleaned,
                                   FUN = function(x) fitModels(x = x, models = allModels, lambda = TRUE),
                                   cl = cl))
+mase_thief <- rbindlist(pblapply(X = cleaned[1:10],
+                                 FUN = function(x) fitModels(x = x, models = fitThiefs, lambda = TRUE),
+                                 cl = cl))
 save(mase, file = "mase.RData")
 save(mase_lambda, file = "mase_lambda.RData")
 
@@ -66,6 +72,7 @@ labels_second <- factor(sapply(sorted, FUN = function(x) names(x[2])))
 labels_third <- factor(sapply(sorted, FUN = function(x) names(x[3])))
 labels_second_worst <- factor(sapply(sorted, FUN = function(x) names(tail(x, 2)[1])))
 labels_worst <- factor(sapply(sorted, FUN = function(x) names(tail(x, 1))))
+save(use_lambda, file = "use_lambda.RData")
 save(labels_first, file = "labels_first.RData")
 save(labels_second, file = "labels_second.RData")
 save(labels_third, file = "labels_third.RData")
