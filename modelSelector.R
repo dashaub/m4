@@ -35,7 +35,12 @@ for(i in seq_along(cleaned)){
     x <- cleaned[[i]]$x
     res[[i]] <- tsFeatures(x)
 }
-
+res <- list()
+for(i in seq_along(cleaned)){
+    print(i)
+    x <- cleaned[[i]]
+    res[[i]] <- fitThiefs(x)
+}
 
 # Build features and labels
 cl <- makeForkCluster(8)
@@ -53,6 +58,7 @@ mase_lambda <- rbindlist(pblapply(X = cleaned,
 mase_thief <- rbindlist(pblapply(X = cleaned,
                                  FUN = fitThiefs,
                                  cl = cl))
+save(mase_thief, file = "mase_thief.RData")
 save(mase, file = "mase.RData")
 save(mase_lambda, file = "mase_lambda.RData")
 
