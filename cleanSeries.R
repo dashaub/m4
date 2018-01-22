@@ -71,7 +71,7 @@ cleaned <- cleanM(allData)
 set.seed(31415926)
 cleaned <- rclean <- sample(cleaned, size = length(cleaned), replace = FALSE)
 # Remove short series
-shortSeries <- sapply(cleaned, FUN = function(x) length(x$x) <= 9)
+shortSeries <- sapply(cleaned, FUN = function(x) length(x$x) < 13)
 cleaned <- cleaned[!shortSeries]
 longSeries <- sapply(cleaned, FUN = function(x) length(x$x) > 5000)
 cleaned <- cleaned[!longSeries]
