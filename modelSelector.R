@@ -4,6 +4,7 @@ library(caret)
 library(ranger)
 library(Boruta)
 
+source("fitModels.R")
 source("cleanSeries.R")
 source("features.R")
 
@@ -49,8 +50,8 @@ mase <- rbindlist(pblapply(X = cleaned,
 mase_lambda <- rbindlist(pblapply(X = cleaned,
                                   FUN = function(x) fitModels(x = x, models = allModels, lambda = TRUE),
                                   cl = cl))
-mase_thief <- rbindlist(pblapply(X = cleaned[1:10],
-                                 FUN = function(x) fitModels(x = x, models = fitThiefs, lambda = TRUE),
+mase_thief <- rbindlist(pblapply(X = cleaned,
+                                 FUN = fitThiefs,
                                  cl = cl))
 save(mase, file = "mase.RData")
 save(mase_lambda, file = "mase_lambda.RData")
