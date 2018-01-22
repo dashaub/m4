@@ -68,43 +68,44 @@ fitModel <- cmpfun(fitModel, options = list(optimize = 3))
 
 fitThiefs <- function(series, lambda = FALSE){
     models <- c("a", "e", "f", "n", "s", "t", "z")
+    nan <- rep(NA, 7)
+    names(nan) <- models
+    results <- data.frame(t(nan))
+
     h <- length(series$xx)
     if(frequency(series$x) == 1){
-        nan <- rep(NA, 7)
-        names(nan) <- models
-        results <- data.frame(t(nan))
         return(results)
         }
-       results <- list()
-       aMod <- thief(series$x, h = h, usemodel = "arima")
-       aRes <- as.numeric(accuracy(aMod, x = series$xx)["Test set", "MASE"])
-       eMod <- thief(series$x, h = h, usemodel = "ets")
-       eRes <- as.numeric(accuracy(eMod, x = series$xx)["Test set", "MASE"])
-       fMod <- thief(series$x, h = h, usemodel = "theta")
-       fRes <- as.numeric(accuracy(fMod, x = series$xx)["Test set", "MASE"])
-       nMod <- tryCatch({thief(series$x, h = h,
-                               forecastfunction = function(y, h, ...) forecast(nnetar(y), h = h))},
-                  error = function(error_condition){NULL})
-       if(is.null(nMod)){
-           nRes <- NA
-        } else{
-            nRes <- as.numeric(accuracy(nMod, x = series$xx)["Test set", "MASE"])
-            }
-       #s <- thief(series$x, h = length(x$xx), usemodel = "arima")
-       #s <- as.numeric(accuracy(a, x = series$xx)["Test set", "MASE"])
-       sRes <- NA
-       tMod <- tryCatch({thief(series$x, h = h,
-                               forecastfunction = function(y, h, ...) forecast(tbats(y), h = h))},
-                  error = function(error_condition){NULL})
-       if(is.null(tMod)){
-           tRes <- NA
-        } else{
-            tRes <- as.numeric(accuracy(nMod, x = series$xx)["Test set", "MASE"])
-            }
-       zMod <- thief(series$x, h = h, usemodel = "snaive")
-       zRes <- as.numeric(accuracy(zMod, x = series$xx)["Test set", "MASE"])
-       results <- data.frame(a = aRes, e = eRes, f = fRes, n = nRes, s = sRes, t = tRes, z = zRes)
-       #names(results) <- models
+    results <- list()
+    aMod <- thief(series$x, h = h, usemodel = "arima")
+    aRes <- as.numeric(accuracy(aMod, x = series$xx)["Test set", "MASE"])
+    eMod <- thief(series$x, h = h, usemodel = "ets")
+    eRes <- as.numeric(accuracy(eMod, x = series$xx)["Test set", "MASE"])
+    fMod <- thief(series$x, h = h, usemodel = "theta")
+    fRes <- as.numeric(accuracy(fMod, x = series$xx)["Test set", "MASE"])
+    nMod <- tryCatch({thief(series$x, h = h,
+                            forecastfunction = function(y, h, ...) forecast(nnetar(y), h = h))},
+               error = function(error_condition){NULL})
+    if(is.null(nMod)){
+       nRes <- NA
+     } else{
+         nRes <- as.numeric(accuracy(nMod, x = series$xx)["Test set", "MASE"])
+         }
+    #s <- thief(series$x, h = length(x$xx), usemodel = "arima")
+    #s <- as.numeric(accuracy(a, x = series$xx)["Test set", "MASE"])
+    sRes <- NA
+    tMod <- tryCatch({thief(series$x, h = h,
+                            forecastfunction = function(y, h, ...) forecast(tbats(y), h = h))},
+               error = function(error_condition){NULL})
+    if(is.null(tMod)){
+        tRes <- NA
+     } else{
+         tRes <- as.numeric(accuracy(nMod, x = series$xx)["Test set", "MASE"])
+        }
+    zMod <- thief(series$x, h = h, usemodel = "snaive")
+    zRes <- as.numeric(accuracy(zMod, x = series$xx)["Test set", "MASE"])
+    results <- data.frame(a = aRes, e = eRes, f = fRes, n = nRes, s = sRes, t = tRes, z = zRes)
+    #names(results) <- models
     return(results)
     }
 fitThiefs <- cmpfun(fitThiefs, options = list(optimize = 3))
