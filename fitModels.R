@@ -93,9 +93,14 @@ fitThiefs <- function(series, lambda = FALSE){
        #s <- thief(series$x, h = length(x$xx), usemodel = "arima")
        #s <- as.numeric(accuracy(a, x = series$xx)["Test set", "MASE"])
        sRes <- NA
-       tMod <- thief(series$x, h = h,
-                  forecastfunction = function(y, h, ...) forecast(tbats(y), h = h))
-       tRes <- as.numeric(accuracy(tMod, x = series$xx)["Test set", "MASE"])
+       tMod <- tryCatch({thief(series$x, h = h,
+                               forecastfunction = function(y, h, ...) forecast(tbats(y), h = h))},
+                  error = function(error_condition){NULL})
+       if(is.null(tMod)){
+           tRes <- NA
+        } else{
+            tRes <- as.numeric(accuracy(nMod, x = series$xx)["Test set", "MASE"])
+            }
        zMod <- thief(series$x, h = h, usemodel = "snaive")
        zRes <- as.numeric(accuracy(zMod, x = series$xx)["Test set", "MASE"])
        results <- data.frame(a = aRes, e = eRes, f = fRes, n = nRes, s = sRes, t = tRes, z = zRes)
