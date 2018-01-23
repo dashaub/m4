@@ -9,7 +9,7 @@ source("cleanSeries.R")
 source("features.R")
 
 # Load all the data files
-files <- dir(pattern = "*.csv")
+files <- dir(pattern = "Data/*.csv")
 
 # All possible models
 #~ models <- c("a", "e", "f", "n", "s", "t")
