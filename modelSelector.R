@@ -31,13 +31,13 @@ allModels <- c("a", "e", "f", "n", "s", "t", "z")
 # Serial features for debugging
 res <- list()
 for(i in seq_along(cleaned)){
-    print(i)
+    print(paste0(i, " of ", length(cleaned)))
     x <- cleaned[[i]]$x
     res[[i]] <- tsFeatures(x)
 }
 res <- list()
 for(i in seq_along(cleaned)){
-    print(i)
+    print(paste0(i, " of ", length(cleaned)))
     x <- cleaned[[i]]
     res[[i]] <- fitThiefs(x)
 }

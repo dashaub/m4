@@ -25,6 +25,11 @@ cleanM <- function(mObj){
         } #else if(mObj[[i]]$period == "OTHER"){
             #mObj[[i]]$period <- "DAILY"
             #}
+        if(mObj[[i]]$period == "DAILY"){
+            mObj[[i]]$x <- msts(mObj[[i]]$x, seasonal.periods = c(7, 365.25), ts.frequency = 7)
+        } else if(mObj[[i]]$period == "HOURLY"){
+            mObj[[i]]$x <- msts(mObj[[i]]$x, seasonal.periods = c(24, 168, 8766), ts.frequency = 24)
+            }
         }
     return(mObj)
     }

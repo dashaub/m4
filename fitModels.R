@@ -11,8 +11,8 @@ fitModels <- function(x, models, lambda = FALSE){
     }
 fitModels <- cmpfun(fitModels, options = list(optimize = 3))
 
-getAccuracy <- function(forecast, series){
-    return(as.numeric(accuracy(mod, x = series$xx)["Test set", "MASE"]))
+getAccuracy <- function(fc, series){
+    return(as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"]))
     }
 getAccuracy <- cmpfun(getAccuracy, options = list(optimize = 3))
 
@@ -67,7 +67,7 @@ fitModel <- cmpfun(fitModel, options = list(optimize = 3))
 
 fitThiefs <- function(series, lambda = FALSE){
     models <- c("a", "e", "f", "n", "s", "t", "z")
-    results <- data.frame(a = NA, e = NA, f = NA, s = NA, t = NA, z = NA)
+    results <- data.frame(a = NA, e = NA, f = NA, n = NA, s = NA, t = NA, z = NA)
     h <- length(series$xx)
     if(frequency(series$x) == 1){
         return(results)
