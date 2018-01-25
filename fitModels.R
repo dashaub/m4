@@ -1,5 +1,6 @@
 library(forecastHybrid)
 library(thief)
+library(prophet)
 library(compiler)
 
 # Fit multiple models and return the MASE
@@ -98,3 +99,13 @@ fitThiefs <- function(series, lambda = FALSE){
     return(results)
     }
 fitThiefs <- cmpfun(fitThiefs, options = list(optimize = 3))
+
+prophetDaily <- function(x){
+    dates <- seq(from = as.Date("2000-01-01"), by = "day", length.out = length(x))
+    df <- data.frame(ds = dates, y = x)
+    m <- prophet(df)
+    future <- make_future_dataframe(m, periods = 365)
+    fc <- predict(m, future)
+    return(fc)
+    }
+prophetDaily <- cmpfun(prophetDaily, options = list(optimize = 3))

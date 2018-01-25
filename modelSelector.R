@@ -70,7 +70,7 @@ save(mase_lambda, file = "mase_lambda.RData")
 
 
 means <- colMeans(mase, na.rm = TRUE)
-sorted <- apply(mase, 1, FUN = sort)
+sorted <- apply(mase, 1, FUN = function(x) names(sort(x)))
 
 # Create labels
 min_mase <- apply(mase, 1, FUN = function(x) min(x, na.rm = TRUE))
