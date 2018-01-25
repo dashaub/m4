@@ -13,7 +13,7 @@ fitModels <- function(x, models, lambda = FALSE){
 fitModels <- cmpfun(fitModels, options = list(optimize = 3))
 
 getAccuracy <- function(fc, series){
-    return(as.numeric(accuracy(fc, x = series$xx)["Test set", "MASE"]))
+    return(as.numeric(accuracy(fc, x = as.numeric(series$xx))["Test set", "MASE"]))
     }
 getAccuracy <- cmpfun(getAccuracy, options = list(optimize = 3))
 

@@ -41,9 +41,19 @@ for(i in seq_along(cleaned)){
     x <- cleaned[[i]]
     res[[i]] <- fitThiefs(x)
 }
+load("M4.RData")
+cleaned <- M4
 isDaily <- sapply(cleaned, FUN = function(x) x$period == "DAILY")
 cleaned <- cleaned[isDaily]
-
+set.seed(83)
+cleaned <- sample(cleaned, 1000)
+for(i in seq_along(cleaned)){
+    cleaned[[i]]$x <- msts(cleaned[[i]]$x, seasonal.periods = c(7, 365.25), ts.frequency = 365)
+    }
+cleaned7 <- cleaned
+for(i in seq_along(cleaned7)){
+    cleaned7[[i]]$x <- msts(cleaned7[[i]]$x, seasonal.periods = c(7, 365.25), ts.frequency = 7)
+    }
 # Build features and labels
 cl <- makeForkCluster(8)
 #features <- rbindlist(parLapplyLB(cl = cl, X = cleaned, fun = function(x) tsFeatures(x$x)))
@@ -57,7 +67,10 @@ mase <- rbindlist(pblapply(X = cleaned,
 mase_lambda <- rbindlist(pblapply(X = cleaned,
                                   FUN = function(x) fitModels(x = x, models = allModels, lambda = TRUE),
                                   cl = cl))
-mase_thief <- rbindlist(pblapply(X = cleaned,
+mase_thief365 <- rbindlist(pblapply(X = cleaned,
+                                 FUN = fitThiefs,
+                                 cl = cl))
+mase_thief <- rbindlist(pblapply(X = cleaned7,
                                  FUN = fitThiefs,
                                  cl = cl))
 save(mase_thief, file = "mase_thief.RData")
