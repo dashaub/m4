@@ -41,6 +41,8 @@ for(i in seq_along(cleaned)){
     x <- cleaned[[i]]
     res[[i]] <- fitThiefs(x)
 }
+isDaily <- sapply(cleaned, FUN = function(x) x$period == "DAILY")
+cleaned <- cleaned[isDaily]
 
 # Build features and labels
 cl <- makeForkCluster(8)

@@ -44,15 +44,24 @@ createMObject <- function(x, type){
     # Ensure msts for hourlyl
     if(frequency(xClean) == 8766){
         xClean <- msts(xClean, seasonal.periods = c(24, 168, 8766), ts.frequency = 24)
+        period <- "HOURLY"
         }
     # Ensure msts for daily
-    if(frequency(xClean) == 365){
+    else if(frequency(xClean) == 365){
         xClean <- msts(xClean, seasonal.periods = c(7, 365.25), ts.frequency = 7)
+        period <- "DAILY"
+        }
+    else if(frequency(xClean) == 1){
+        period <- "YEARLY"
+        }
+    else if(frequency(xClean) == 12){
+        period <- "MONTHLY"
         }
     horizon <- getHorizonFromFrequency(xClean)
     testSet <- subset(xClean, start = tsLength - horizon + 1)
     trainSet <- subset(xClean, end = tsLength - horizon)
-    returnList <- list(x = trainSet, xx = testSet, h = horizon, n = length(trainSet), type = type)
+    returnList <- list(x = trainSet, xx = testSet, h = horizon,
+                       n = length(trainSet), type = type, period = period)
     return(returnList)
     }
 
