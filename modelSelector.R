@@ -28,8 +28,10 @@ sampled <- sample(sampled, round(length(sampled) * 0.5))
 load("M4.RData")
 isDaily <- sapply(M4, FUN = function(x) x$period == "DAILY")
 dailyM4 <- M4[isDaily]
+# Remove too long/short series
+cleaned <- filterLength(dailyM4)
 set.seed(83)
-cleaned <- c(sampled, dailyM4)
+cleaned <- c(cleaned, dailyM4)
 cleaned <- cleanM(cleaned)
 
 # Prepare data for training
@@ -55,7 +57,7 @@ for(i in seq_along(cleaned)){
 
 
 # Build features and labels
-cl <- makeForkCluster(8)
+cl <- makeForkCluster(4)
 #features <- rbindlist(parLapplyLB(cl = cl, X = cleaned, fun = function(x) tsFeatures(x$x)))
 features <- rbindlist(pblapply(X = cleaned, FUN = function(x) tsFeatures(x$x), cl = cl))
 save(features, file = "features.RData", compress = "xz", compression_level = 9)

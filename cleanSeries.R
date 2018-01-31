@@ -5,6 +5,12 @@ library(Mcomp)
 library(doMC)
 library(Tcomp)
 
+filterLength <- function(x, min = 13, max = 5000){
+    short <- sapply(x, FUN = function(x) length(x$x) >= min)
+    long <- sapply(x, FUN = function(x) length(x$x) <= max)
+    return(x[short & long])
+    }
+
 getHorizonFromFrequency <- function(x){
     freq <- as.character(frequency(x))
     switch(freq, "24" = 48, "7" = 14, "52" = 13, "12" = 18, "1" = 6)
