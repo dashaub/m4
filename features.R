@@ -9,7 +9,9 @@ library(forecastHybrid)
 
 featuresHelper <- function(x){
     options(warn=-1)
-    adf <- adf.test(x)
+    adf <- tryCatch({adf.test(x)},
+                    error = function(error_condition) {list(statistic = 0, p.value = 0)
+                        })
     scaled <- scale(x)
     min_x = min(scaled)
     max_x = max(scaled)
@@ -30,8 +32,8 @@ featuresHelper <- function(x){
                      as.numeric(abs(coef(tslm(x ~ trend + season, x))["trend"])),
                      as.numeric(abs(coef(tslm(x ~ trend, x))["trend"])))
     trend2 <- AIC(tslm(x ~ trend, x)) > AIC(tslm(x ~ trend + I(trend^2), x))
-    pp <- pp.test(x)
-    pp_explosive <- pp.test(x, alternative = "explosive")
+    pp <- tryCatch({pp.test(x)}, error = function(e) list(p.value = 0))
+    pp_explosive <- tryCatch({pp.test(x, alternative = "explosive")}, error = function(e) list(p.value = 0))
     arima_order <- tryCatch({auto.arima(x, method = "CSS")$arma},
                             error = function(error_condition){
                                         auto.arima(x)$arma
@@ -44,14 +46,14 @@ featuresHelper <- function(x){
     tabled <- table(x)
 
     # Nortest
-    ad <- ad.test(scaled)
-    cvm <- cvm.test(scaled)
-    lillie <- lillie.test(scaled)
+    ad <- tryCatch({ad.test(scaled)}, error = function(e) list(statistic = 0, p.value = 0))
+    cvm <- tryCatch({cvm.test(scaled)}, error = function(e) list(statistic = 0, p.value = 0))
+    lillie <- tryCatch({lillie.test(scaled)}, error = function(e) list(statistic = 0, p.value = 0))
     pearson <- pearson.test(scaled)
-    sf <- sf.test(scaled)
+    sf <- tryCatch({sf.test(scaled)}, error = function(e) list(statistic = 0, p.value = 0))
     jb <- jarque.bera.test(x)
-    kpss_level <- kpss.test(x)
-    kpss_trend <- kpss.test(x)
+    kpss_level <- tryCatch(kpss.test(x, null = "Level"), error = function(e) list(p.value = 0))
+    kpss_trend <- tryCatch(kpss.test(x, null = "Trend"), error = function(e) list(p.value = 0))
 
     # MA features
     ma3 <- ma(x, order = 3, centre = FALSE)
@@ -66,8 +68,8 @@ featuresHelper <- function(x){
     summary_ma6 <- summary(ma6_reg)
 
     # AR features
-    a <- ar(x)
-    ar_fit <- ar(x, aic = FALSE, order.max = 7)$ar
+    a <- tryCatch(ar(x), error = function(e) list(order = 0, residuals = rep(0, length(x))))
+    ar_fit <- tryCatch(ar(x, aic = FALSE, order.max = 7)$ar, error = function(e) rep(0, 7))
 
     #ACF features
     pacf_fit <- pacf(x, plot = FALSE, lag.max = 7)
@@ -78,7 +80,7 @@ featuresHelper <- function(x){
     pacf_sum <- sum(abs(pacf_fit$acf))
 
     # BDS
-    bds_test <- bds.test(x)
+    bds_test <- tryCatch({bds.test(scaled)}, error = function(e) list(p.value = 0))
 
     # Differences
     diffSeries <- diff(x)
@@ -93,8 +95,7 @@ featuresHelper <- function(x){
     # GARCH
     g <- tryCatch({garch(x, control = garch.control(trace = FALSE))},
                   error = function(error_condition){
-                      garch(x + rnorm(length(x), sd = sd(x)),
-                            control = garch.control(trace = FALSE))
+                      list(a0 = 0, a1 = 1, b0 = 1)
                       })
 
     # Outliers
@@ -119,7 +120,7 @@ featuresHelper <- function(x){
     break_cvm_per <- break_cvm / len
 
     # Build lots of features
-    df = data.frame(len = length(x),
+    df = list(len = length(x),
                     unique_len = len,
                     unique_ratio = unique_len / len,
                     ndiffs = ndiffs(x),
@@ -157,7 +158,7 @@ featuresHelper <- function(x){
                     entropy_sg = entropy(tabled, method = "SG"),
                     entropy_minimax = entropy(tabled, method = "minimax"),
                     entropy_cs = entropy(tabled, method = "CS"),
-                    spectral = findfrequency(x),
+                    spectral = tryCatch(findfrequency(x), error = function(e) 1),
                     ad_statistic = ad$statistic,
                     ad_p = ad$p.value,
                     cvm_statistic = cvm$statistic,
@@ -173,11 +174,11 @@ featuresHelper <- function(x){
                     log_skew = log_skew,
                     log_kurtosis = log_kurtosis,
                     ma3_r_sq = summary_ma3$adj.r.squared,
-                    ma3_r_coef = coef(summary_ma3)[2,1],
-                    ma3_coef_t = abs(coef(summary_ma3)[2,3]),
+                    ma3_r_coef = tryCatch(coef(summary_ma3)[2,1], error = function(e) 0),
+                    ma3_coef_t = tryCatch(abs(coef(summary_ma3)[2,3]), error = function(e) 0),
                     ma6_r_sq = summary_ma6$adj.r.squared,
-                    ma6_r_coef = coef(summary_ma6)[2,1],
-                    ma6_coef_t = abs(coef(summary_ma6)[2,3]),
+                    ma6_r_coef = tryCatch(coef(summary_ma6)[2,1], error = function(e) 0),
+                    ma6_coef_t = tryCatch(abs(coef(summary_ma6)[2,3]), error = function(e) 0),
                     ar_order = a$order,
                     ar_resids = sum(abs(residuals(a)), na.rm = TRUE) / sum(abs(x)),
                     pos_diff = posDiff,
@@ -211,8 +212,8 @@ featuresHelper <- function(x){
                     pacf_sig = pacf_sig,
                     acf_sum = acf_sum,
                     pacf_sum = pacf_sum,
-                    sharpe = sharpe(scaled),
-                    sterling = sterling(scaled),
+                    sharpe = tryCatch(sharpe(scaled), error = function(e) 0),
+                    sterling = tryCatch(sterling(scaled), error = function(e) 0),
 #~                     runs_pos = runs.test(factor(diffSeries >= 0),
 #~                                                 levels = c(TRUE, FALSE))$p.value,
 #~                     runs_pos_less = runs.test(factor(diffSeries >= 0,
@@ -233,12 +234,12 @@ featuresHelper <- function(x){
 #~                     bds_min = min(bds_test$p.value),
 #~                     bds_median = median(bds_test$p.value),
 #~                     bds_mean = mean(bds_test$p.value),
-                    max_drawdown = maxdrawdown(scaled)$maxdrawdown,
+                    max_drawdown = tryCatch(maxdrawdown(scaled)$maxdrawdown, error = function(e) 0),
                     jb = jb$p.value,
                     kpss_trend = kpss_trend$p.value,
                     kpss_level = kpss_level$p.value,
-                    tv_test = terasvirta.test(x)$p.value,
-                    white = white.test(x)$p.value,
+                    tv_test = tryCatch(terasvirta.test(x)$p.value, error = function(e) 0),
+                    white = tryCatch(white.test(x)$p.value, error = function(e) 0),
                     garch_a0 = coef(g)["a0"],
                     garch_a1 = coef(g)["a1"],
                     garch_b0 = coef(g)["b1"],
@@ -261,7 +262,7 @@ featuresHelper <- function(x){
                     break_cvm = break_cvm,
                     break_cvm_per = break_cvm_per
                     )
-    rownames(df) <- NULL
+    #rownames(df) <- NULL
     options(warn=0)
     return(df)
     }

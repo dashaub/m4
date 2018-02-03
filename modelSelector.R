@@ -54,6 +54,10 @@ for(i in seq_along(cleaned)){
     x <- cleaned[[i]]
     res[[i]] <- fitThiefs(x)
 }
+m4 <- M4
+for(i in seq_along(m4)){
+    m4[[i]]$x <- ts(c(M4[[i]]$x, M4[[i]]$xx), f = frequency(M4[[i]]$x))
+    }
 
 
 # Build features and labels
