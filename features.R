@@ -95,7 +95,7 @@ featuresHelper <- function(x){
     # GARCH
     g <- tryCatch({garch(x, control = garch.control(trace = FALSE))},
                   error = function(error_condition){
-                      list(a0 = 0, a1 = 1, b0 = 1)
+                      list(coefficients = list(a0 = 0, a1 = 1, b1 = 1))
                       })
 
     # Outliers
@@ -120,7 +120,7 @@ featuresHelper <- function(x){
     break_cvm_per <- break_cvm / len
 
     # Build lots of features
-    df = list(len = length(x),
+    df = data.frame(len = length(x),
                     unique_len = len,
                     unique_ratio = unique_len / len,
                     ndiffs = ndiffs(x),
@@ -262,7 +262,8 @@ featuresHelper <- function(x){
                     break_cvm = break_cvm,
                     break_cvm_per = break_cvm_per
                     )
-    #rownames(df) <- NULL
+    rownames(df) <- NULL
+    df[is.na(df)] <- 0
     options(warn=0)
     return(df)
     }
