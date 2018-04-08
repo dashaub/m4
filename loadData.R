@@ -1,5 +1,4 @@
 library(thief)
-library(forecast)
 library(pbapply)
 library(data.table)
 
@@ -15,7 +14,7 @@ getFrequency <- function(input){
 
 getHorizon <- function(input){
   inputNames <- c("Daily", "Hourly", "Monthly", "Yearly", "Weekly", "Quarterly")
-  mapping <- c(14, 48, 18, 6, 13, 1)
+  mapping <- c(14, 48, 18, 6, 13, 8)
   names(mapping) <- inputNames
   return(as.numeric(mapping[input]))
 }
@@ -27,6 +26,7 @@ for(currentSeries in allData){
   inputPath <- paste0("~/m4/Data/", currentSeries, "-train.csv") 
   #dat <- read.csv(inputPath, header = TRUE, quote = '"')
   dat <- fread(inputPath, header = TRUE, data.table = FALSE)
+  seriesNames <- dat[, 1]
   dat <- dat[, -1]
   seriesFrequency <- getFrequency(currentSeries)
   seriesHorizon <- getHorizon(currentSeries)
@@ -49,8 +49,7 @@ extractList <- function(x){
   return(series)
   }
 
-seriesNames <- names(dat)
-dat <- apply(dat, MARGIN = 2, FUN = function(x) extractList(x))
+dat <- apply(dat, MARGIN = 1, FUN = function(x) extractList(x))
 names(dat) <- seriesNames
 gc()
 
