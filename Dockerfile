@@ -21,6 +21,7 @@ RUN apt-get update \
     fonts-texgyre \
     g++ \
     gfortran \
+    git \
     gsfonts \
     libblas-dev \
     libbz2-1.0 \
@@ -67,6 +68,8 @@ RUN apt-get update \
     texlive-fonts-recommended \
     texlive-fonts-extra \
     texlive-latex-recommended \
+    unrar-free \
+    wget \
     x11proto-core-dev \
     xauth \
     xfonts-base \
@@ -128,6 +131,10 @@ RUN apt-get update \
   ## TEMPORARY WORKAROUND to get more robust error handling for install2.r prior to littler update
   && curl -O /usr/local/bin/install2.r https://github.com/eddelbuettel/littler/raw/master/inst/examples/install2.r \
   && chmod +x /usr/local/bin/install2.r \
+  ## Get files
+  && cd ~ \
+  && git clone https://github.com/dashaub/m4.git \
+  && m4\DownloadData.sh \
   ## Clean up from R source install
   && cd / \
   && rm -rf /tmp/* \
