@@ -39,7 +39,9 @@ RUN apt-get update \
     liblzma5 \
     locales \
     make \
+    unrar-free \
     unzip \
+    wget \
     zip \
     zlib1g \
     zlib1g-dev \
@@ -68,8 +70,6 @@ RUN apt-get update \
     texlive-fonts-recommended \
     texlive-fonts-extra \
     texlive-latex-recommended \
-    unrar-free \
-    wget \
     x11proto-core-dev \
     xauth \
     xfonts-base \
@@ -127,14 +127,16 @@ RUN apt-get update \
   && ln -s /usr/local/lib/R/site-library/littler/examples/installGithub.r /usr/local/bin/installGithub.r \
   && ln -s /usr/local/lib/R/site-library/littler/bin/r /usr/local/bin/r \
   ## Install other R packages
-  && Rscript -e 'install.packages(c("thief", "data.table", "pbapply", "devtools"))' \
+  && Rscript -e 'install.packages("devtools")' \
+  && Rscript -e 'devtools::install_github("robjhyndman/forecast", ref = "262174c4df6f1a61ad1049f929be84b4299b3b3f")' \
+  && Rscript -e 'install.packages(c("thief", "data.table", "pbapply"))' \
   ## TEMPORARY WORKAROUND to get more robust error handling for install2.r prior to littler update
   && curl -O /usr/local/bin/install2.r https://github.com/eddelbuettel/littler/raw/master/inst/examples/install2.r \
   && chmod +x /usr/local/bin/install2.r \
   ## Get files
   && cd ~ \
   && git clone https://github.com/dashaub/m4.git \
-  && m4\DownloadData.sh \
+  #&& ~/m4/DownloadData.sh \
   ## Clean up from R source install
   && cd / \
   && rm -rf /tmp/* \
