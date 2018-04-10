@@ -9,17 +9,13 @@ paths <- paste0("~/m4/Data/", inputs,  "-train.csv")
 
 
 getFrequency <- function(input){
-  inputNames <- c("Daily", "Hourly", "Monthly", "Yearly", "Weekly", "Quarterly")
-  mapping <- c(7, 24, 12, 1, 52, 4)
-  names(mapping) <- inputNames
-  return(as.numeric(mapping[input]))
+  tab <- c("Hourly" = 24, "Daily" = 7, "Weekly" = 52, "Monthly" = 12, "Quarterly" = 4, "Yearly" = 1)
+  return(as.numeric(tab[input]))
 }
 
 getHorizon <- function(input){
-  inputNames <- c("Daily", "Hourly", "Monthly", "Yearly", "Weekly", "Quarterly")
-  mapping <- c(14, 48, 18, 6, 13, 8)
-  names(mapping) <- inputNames
-  return(as.numeric(mapping[input]))
+  tab <- c("Hourly" = 48, "Daily" = 14, "Weekly" = 13, "Monthly" = 18, "Quarterly" = 8, "Yearly" = 6)
+  return(as.numeric(tab[input]))
 }
 
 combineForecasts <- function(x){
@@ -67,8 +63,8 @@ writeResults <- function(x, seriesName){
 }
 
 # Temporary for debug
-# Completed hourly, yearly (weekly needs at least 2 periods)
-allData <- inputs[4]
+# Completed hourly, yearly, testing quarterly (weekly needs at least 2 periods)
+allData <- inputs[6]
 currentSeries <- allData
 for(currentSeries in allData){
   print(paste("Processing", currentSeries))
@@ -85,14 +81,15 @@ for(currentSeries in allData){
   names(dat) <- seriesNames
   gc()
 
-  # Use an ensemble model for yearly forecasts
-  if(currentSeries == "Yearly"){
-    forecasts <- pblapply(dat,
-                          FUN = function(x) forecast(hybridModel(y = x, models = "aft",
-                                                                 verbose = FALSE),
-                                                     h = seriesHorizon, level = 95),
-                          cl = numCores)
-  } else{
+  # Generate the base forecasts for prediction intervals
+  forecasts <- pblapply(dat,
+                        FUN = function(x) forecast(hybridModel(y = x, models = "aft",
+                                                               verbose = FALSE),
+                                                   h = seriesHorizon, level = 95,
+                                                   PI.combination = "mean"),
+                        cl = numCores)
+
+  if(currentSeries != "Yearly"){
     # Forecast for prediction intervals
     forecastsPI <- pblapply(dat,
                             FUN = function(x) forecast(hybridModel(y = x, models = "aft",

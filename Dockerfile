@@ -131,7 +131,8 @@ RUN apt-get update \
   ## Install other R packages
   && Rscript -e 'install.packages("devtools")' \
   && Rscript -e 'devtools::install_github("robjhyndman/forecast", ref = "262174c4df6f1a61ad1049f929be84b4299b3b3f")' \
-  && Rscript -e 'install.packages(c("thief", "data.table", "pbapply", "forecastHybrid"))' \
+  && Rscript -e 'devtools::install_github("ellisp/forecastHybrid", ref = "c928178a43ed43d457d86230a2edd8f3b57cf61c")' \
+  && Rscript -e 'install.packages(c("thief", "data.table", "pbapply"))' \
   ## TEMPORARY WORKAROUND to get more robust error handling for install2.r prior to littler update
   && curl -O /usr/local/bin/install2.r https://github.com/eddelbuettel/littler/raw/master/inst/examples/install2.r \
   && chmod +x /usr/local/bin/install2.r \
