@@ -95,6 +95,8 @@ RUN apt-get update \
     AWK=/usr/bin/awk \
     CFLAGS="-g -O3 -march=native -pipe -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g" \
     CXXFLAGS="-g -O3 -march=native -pipe -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g" \
+    FFLAGS="-g -O3 -march=native -pipe" \
+    FCFLAGS="-g -O3 -march=native -pipe"\
   ## Configure options
   ./configure --enable-R-shlib \
                --enable-memory-profiling \
@@ -129,14 +131,15 @@ RUN apt-get update \
   ## Install other R packages
   && Rscript -e 'install.packages("devtools")' \
   && Rscript -e 'devtools::install_github("robjhyndman/forecast", ref = "262174c4df6f1a61ad1049f929be84b4299b3b3f")' \
-  && Rscript -e 'install.packages(c("thief", "data.table", "pbapply"))' \
+  && Rscript -e 'install.packages(c("thief", "data.table", "pbapply", "forecastHybrid"))' \
   ## TEMPORARY WORKAROUND to get more robust error handling for install2.r prior to littler update
   && curl -O /usr/local/bin/install2.r https://github.com/eddelbuettel/littler/raw/master/inst/examples/install2.r \
   && chmod +x /usr/local/bin/install2.r \
   ## Get files
   && cd ~ \
-  && git clone https://github.com/dashaub/m4.git \
+  && git clone --depth 1 https://github.com/dashaub/m4.git \
   #&& ~/m4/DownloadData.sh \
+  && mkdir -p ~/m4/Data \
   ## Clean up from R source install
   && cd / \
   && rm -rf /tmp/* \
@@ -144,4 +147,6 @@ RUN apt-get update \
   && apt-get autoremove -y \
   && apt-get autoclean -y \
   && rm -rf /var/lib/apt/lists/*
+
+COPY Data /root/m4/Data
 #CMD ["R"]
