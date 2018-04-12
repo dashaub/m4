@@ -13,6 +13,8 @@ ENV R_VERSION=${R_VERSION:-3.4.4} \
     LANG=en_US.UTF-8 \
     TERM=xterm
 
+COPY * /root/m4/
+
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     bash-completion \
@@ -21,7 +23,6 @@ RUN apt-get update \
     fonts-texgyre \
     g++ \
     gfortran \
-    git \
     gsfonts \
     libblas-dev \
     libbz2-1.0 \
@@ -39,7 +40,6 @@ RUN apt-get update \
     liblzma5 \
     locales \
     make \
-    unrar-free \
     unzip \
     wget \
     zip \
@@ -93,10 +93,10 @@ RUN apt-get update \
     R_PRINTCMD=/usr/bin/lpr \
     LIBnn=lib \
     AWK=/usr/bin/awk \
-    CFLAGS="-g -O3 -march=native -pipe -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g" \
-    CXXFLAGS="-g -O3 -march=native -pipe -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g" \
-    FFLAGS="-g -O3 -march=native -pipe" \
-    FCFLAGS="-g -O3 -march=native -pipe"\
+    CFLAGS="-g -O2 -march=native -pipe -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g" \
+    CXXFLAGS="-g -O2 -march=native -pipe -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g" \
+    FFLAGS="-g -O2 -march=native -pipe" \
+    FCFLAGS="-g -O2 -march=native -pipe"\
   ## Configure options
   ./configure --enable-R-shlib \
                --enable-memory-profiling \
@@ -130,17 +130,17 @@ RUN apt-get update \
   && ln -s /usr/local/lib/R/site-library/littler/bin/r /usr/local/bin/r \
   ## Install other R packages
   && Rscript -e 'install.packages("devtools")' \
-  && Rscript -e 'devtools::install_github("robjhyndman/forecast", ref = "262174c4df6f1a61ad1049f929be84b4299b3b3f")' \
-  && Rscript -e 'devtools::install_github("ellisp/forecastHybrid", ref = "c928178a43ed43d457d86230a2edd8f3b57cf61c")' \
+  && Rscript -e 'devtools::install_github("robjhyndman/forecast", ref = "0b10c5327cbbdadeb7fee23c44b1278b68f078de")' \
+  && Rscript -e 'devtools::install_github("ellisp/forecastHybrid/pkg", ref = "c928178a43ed43d457d86230a2edd8f3b57cf61c")' \
   && Rscript -e 'install.packages(c("thief", "data.table", "pbapply"))' \
   ## TEMPORARY WORKAROUND to get more robust error handling for install2.r prior to littler update
   && curl -O /usr/local/bin/install2.r https://github.com/eddelbuettel/littler/raw/master/inst/examples/install2.r \
   && chmod +x /usr/local/bin/install2.r \
   ## Get files
-  && cd ~ \
-  && git clone --depth 1 https://github.com/dashaub/m4.git \
-  #&& ~/m4/DownloadData.sh \
-  && mkdir -p ~/m4/Data \
+  #&& git clone --depth 1 https://github.com/dashaub/m4.git \
+  && rm -rf ~/m4/.git/ ~/m4/objects ~/m4/logs ~/m4/hooks ~/m4/info\
+  && cd ~/m4 \
+  && ./DownloadData.sh \
   ## Clean up from R source install
   && cd / \
   && rm -rf /tmp/* \
@@ -149,5 +149,4 @@ RUN apt-get update \
   && apt-get autoclean -y \
   && rm -rf /var/lib/apt/lists/*
 
-COPY Data /root/m4/Data
 #CMD ["R"]
