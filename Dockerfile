@@ -130,7 +130,7 @@ RUN apt-get update \
   && ln -s /usr/local/lib/R/site-library/littler/bin/r /usr/local/bin/r \
   ## Install other R packages
   && Rscript -e 'install.packages("devtools")' \
-  && Rscript -e 'devtools::install_github("robjhyndman/forecast", ref = "0b10c5327cbbdadeb7fee23c44b1278b68f078de")' \
+  && Rscript -e 'install.packages("forecast")' \
   && Rscript -e 'devtools::install_github("ellisp/forecastHybrid/pkg", ref = "c928178a43ed43d457d86230a2edd8f3b57cf61c")' \
   && Rscript -e 'install.packages(c("thief", "data.table", "pbapply"))' \
   ## TEMPORARY WORKAROUND to get more robust error handling for install2.r prior to littler update

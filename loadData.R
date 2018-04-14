@@ -2,9 +2,9 @@ library(thief)
 library(forecastHybrid)
 library(pbapply)
 library(data.table)
-numCores <- 6
+numCores <- 1
 
-inputs <- c("Daily", "Hourly", "Monthly", "Yearly", "Weekly", "Quarterly")
+inputs <- c("Hourly", "Daily", "Weekly", "Monthly", "Quarterly", "Yearly")
 paths <- paste0("~/m4/Data/", inputs,  "-train.csv")
 
 
@@ -49,7 +49,7 @@ writeResults <- function(forecastList, seriesName){
 }
 
 # Temporary for debug
-# Completed hourly, yearly, testing monthly (weekly need at least 2 periods, and quarterly fail)
+# Completed hourly, yearly testing daily (weekly need at least 2 periods, and quarterly fail, monthly succeed with n=200 and single core)
 allData <- inputs[3]
 currentSeries <- allData
 for(currentSeries in allData){
