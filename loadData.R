@@ -2,6 +2,7 @@ library(thief)
 library(forecastHybrid)
 library(pbapply)
 library(data.table)
+library(parallel)
 numCores <- 1
 
 inputs <- c("Hourly", "Daily", "Weekly", "Monthly", "Quarterly", "Yearly")
@@ -49,8 +50,8 @@ writeResults <- function(forecastList, seriesName){
 }
 
 # Temporary for debug
-# Completed hourly, yearly testing daily (weekly need at least 2 periods, and quarterly fail, monthly succeed with n=200 and single core)
-allData <- inputs[3]
+# Completed hourly, yearly, daily (weekly need at least 2 periods, and quarterly fail, monthly succeed with n=200 and single core)
+allData <- inputs[2]
 currentSeries <- allData
 for(currentSeries in allData){
   print(paste("Processing", currentSeries))
@@ -65,7 +66,7 @@ for(currentSeries in allData){
   dat <- apply(dat, MARGIN = 1, FUN = function(x) extractList(x, currentSeries))
   names(dat) <- seriesNames
   set.seed(1234)
-  dat <- sample(dat, 359)
+  #dat <- sample(dat, 359)
   gc()
 
   # Generate the base forecasts for prediction intervals

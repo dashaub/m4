@@ -138,9 +138,7 @@ RUN apt-get update \
   && chmod +x /usr/local/bin/install2.r \
   ## Get files
   #&& git clone --depth 1 https://github.com/dashaub/m4.git \
-  && rm -rf ~/m4/.git/ ~/m4/objects ~/m4/logs ~/m4/hooks ~/m4/info\
-  && cd ~/m4 \
-  && ./DownloadData.sh \
+  && rm -rf ~/m4/.git/ ~/m4/objects ~/m4/logs ~/m4/hooks ~/m4/info ~/m4/Data \
   ## Clean up from R source install
   && cd / \
   && rm -rf /tmp/* \
