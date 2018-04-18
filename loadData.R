@@ -51,10 +51,10 @@ writeResults <- function(forecastList, seriesName){
 
 # Temporary for debug
 # Completed hourly, yearly, daily (weekly need at least 2 periods, and quarterly fail, monthly succeed with n=200 and single core)
-allData <- inputs[2]
+allData <- inputs[5]
 currentSeries <- allData
 for(currentSeries in allData){
-  print(paste("Processing", currentSeries))
+  message("Processing", currentSeries)
   inputPath <- paste0("~/m4/Data/", currentSeries, "-train.csv")
   dat <- fread(inputPath, header = TRUE, data.table = FALSE)
   # Extract series names and remove from dataframe
