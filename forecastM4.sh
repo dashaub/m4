@@ -2,8 +2,8 @@
 
 set -euo pipefail
 
-Rscript loadData.R
+Rscript forecastM4.R
 echo 'Point forecasts and prediction intervals created successfully!'
-echo 'Pressing enter will exit and erase all results.'
+echo 'Pressing enter will exit the container and erase all results.'
 read
 exit
