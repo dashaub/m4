@@ -19,11 +19,13 @@ combineForecasts <- function(forecastPI, forecastsPoint){
   for(ind in seq_along(results)){
     extracted <- lapply(forecastsPoint, function(x) x[[ind]]$mean)
     extracted <- extracted[!sapply(extracted, is.null)]
-    combined <- ts(rowMeans(data.frame(extracted), na.rm = TRUE))
-    tsp(combined) <- tsp(forecastPI[[ind]]$mean)
-    results[[ind]]$mean <- combined
+    if(length(extracted) > 0){
+      combined <- ts(rowMeans(data.frame(extracted), na.rm = TRUE))
+      tsp(combined) <- tsp(forecastPI[[ind]]$mean)
+      results[[ind]]$mean <- combined
     }
-    return(results)
+  }
+  return(results)
 }
 
 # Extract the dataframe to a list of msts objects
@@ -58,7 +60,8 @@ writeResults <- function(forecastList, seriesName){
 
 # Temporary for debug
 # Completed hourly, yearly, daily
-#(weekly need at least 2 periods and fails for arima and theta, succeed for point, and quarterly fail
+#(weekly need at least 2 periods and fails for arimaThief and thetaThief, succeed for point
+# quarterly fail
 # monthly succeed with n=200 and single core)
 allData <- inputs[5]
 currentSeries <- allData
@@ -80,19 +83,18 @@ for(currentSeries in allData){
 
   # Generate the base forecasts for prediction intervals
   forecasts <- pblapply(dat,
-                        FUN = function(x) forecast(hybridModel(y = x, models = "aft",
-                                                               verbose = FALSE),
+                        FUN = function(x) forecast(hybridModel(x, models = "aft", verbose = FALSE),
                                                    h = h, level = 95,
                                                    PI.combination = "mean"),
                         cl = numCores)
 
   if(currentSeries != "Yearly"){
     # Create point forecasts from an ensemble
-    arimaForecasts <- pblapply(X = dat, function(x) thiefForecast(x, h, "arima"), cl = numCores)
-    thetaForecasts <- pblapply(X = dat, function(x) thiefForecast(x, h, "theta"), cl = numCores)
-    etsForecasts <- pblapply(X = dat, function(x) thiefForecast(x, h, "ets"), cl = numCores)
+    arimaRes <- pblapply(X = dat, function(x) thiefForecast(x, h, "arima"), cl = numCores)
+    thetaRes <- pblapply(X = dat, function(x) thiefForecast(x, h, "theta"), cl = numCores)
+    etsRes <- pblapply(X = dat, function(x) thiefForecast(x, h, "ets"), cl = numCores)
     # Combine the forecasts
-    combinedForecasts <- combineForecasts(forecasts, list(arimaForecasts, thetaForecasts))
+    combinedForecasts <- combineForecasts(forecasts, list(arimaRes, thetaRes, etsRes))
     # forecasts <- combinedForecasts
   }
 
