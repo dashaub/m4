@@ -37,6 +37,13 @@ extractList <- function(x, seriesName){
   return(series)
 }
 
+thiefForecast <- function(x, horizon, model){
+    if(length(x) < 2 * frequency(x)){
+        return(NULL)
+    }
+    return(thief(y = x, h = horizon, usemodel = model))
+}
+
 writeResults <- function(forecastList, seriesName){
   components <- c("mean", "lower", "upper")
   for(component in components){
@@ -50,7 +57,9 @@ writeResults <- function(forecastList, seriesName){
 }
 
 # Temporary for debug
-# Completed hourly, yearly, daily (weekly need at least 2 periods, and quarterly fail, monthly succeed with n=200 and single core)
+# Completed hourly, yearly, daily
+#(weekly need at least 2 periods and fails for arima and theta, succeed for point, and quarterly fail
+# monthly succeed with n=200 and single core)
 allData <- inputs[5]
 currentSeries <- allData
 for(currentSeries in allData){
@@ -60,7 +69,7 @@ for(currentSeries in allData){
   # Extract series names and remove from dataframe
   seriesNames <- dat[, 1]
   dat <- dat[, -1]
-  seriesHorizon <- getHorizon(currentSeries)
+  h <- getHorizon(currentSeries)
 
   # Transform to list
   dat <- apply(dat, MARGIN = 1, FUN = function(x) extractList(x, currentSeries))
@@ -73,20 +82,18 @@ for(currentSeries in allData){
   forecasts <- pblapply(dat,
                         FUN = function(x) forecast(hybridModel(y = x, models = "aft",
                                                                verbose = FALSE),
-                                                   h = seriesHorizon, level = 95,
+                                                   h = h, level = 95,
                                                    PI.combination = "mean"),
                         cl = numCores)
 
   if(currentSeries != "Yearly"){
     # Create point forecasts from an ensemble
-    arimaForecasts <- pblapply(X = dat,
-                               FUN = function(x) thief(x, h = seriesHorizon, usemodel = "arima"),
-                               cl = numCores)
-    thetaForecasts <- pblapply(X = dat,
-                               FUN = function(x) thief(x, h = seriesHorizon, usemodel = "theta"),
-                               cl = numCores)
+    arimaForecasts <- pblapply(X = dat, function(x) thiefForecast(x, h, "arima"), cl = numCores)
+    thetaForecasts <- pblapply(X = dat, function(x) thiefForecast(x, h, "theta"), cl = numCores)
+    etsForecasts <- pblapply(X = dat, function(x) thiefForecast(x, h, "ets"), cl = numCores)
     # Combine the forecasts
     combinedForecasts <- combineForecasts(forecasts, list(arimaForecasts, thetaForecasts))
+    # forecasts <- combinedForecasts
   }
 
   # Write results
