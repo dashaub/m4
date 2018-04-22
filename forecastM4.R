@@ -3,7 +3,7 @@ library(forecastHybrid)
 library(pbapply)
 library(data.table)
 library(parallel)
-numCores <- 1
+numCores <- 6
 
 inputs <- c("Hourly", "Daily", "Weekly", "Monthly", "Quarterly", "Yearly")
 paths <- paste0("~/m4/Data/", inputs,  "-train.csv")
@@ -51,22 +51,20 @@ writeResults <- function(forecastList, seriesName){
   for(component in components){
     baseDir <- paste0("~/m4/", component)
     dir.create(file.path(baseDir), showWarnings = FALSE)
-    forecasts <- t(data.frame(lapply(forecastList, FUN = function(x) x[[component]])))
-    rNames <- rownames(forecasts)
-    filename <- paste0(baseDir, seriesName, "-", component, ".csv")
+    forecasts <- data.frame(t(data.frame(lapply(forecastList, FUN = function(x) x[[component]]))))
+    forecasts <- round(forecasts, 4)
+    rownames(forecasts) <- names(forecastList)
+    filename <- paste0(baseDir, "/", seriesName, "-", component, ".csv")
     write.table(x = forecasts, file = filename, quote = FALSE, sep = ",", col.names = FALSE)
   }
 }
 
 # Temporary for debug
-# Completed hourly, yearly, daily
-#(weekly need at least 2 periods and fails for arimaThief and thetaThief, succeed for point
-# quarterly fail
+# Completed hourly, daily, yearly
+#(weekly need at least 2 periods and fails for arimaThief and thetaThief, succeed for point, succeed on reconcile
 # monthly succeed with n=200 and single core)
-allData <- inputs[5]
-currentSeries <- allData
-for(currentSeries in allData){
-  message("Processing", currentSeries)
+for(currentSeries in inputs){
+  message("Processing ", currentSeries)
   inputPath <- paste0("~/m4/Data/", currentSeries, "-train.csv")
   dat <- fread(inputPath, header = TRUE, data.table = FALSE)
   # Extract series names and remove from dataframe
@@ -78,26 +76,29 @@ for(currentSeries in allData){
   dat <- apply(dat, MARGIN = 1, FUN = function(x) extractList(x, currentSeries))
   names(dat) <- seriesNames
   set.seed(1234)
-  #dat <- sample(dat, 359)
+  dat <- sample(dat, 6)
   gc()
 
+  cl <- makeCluster(numCores)
+  clusterEvalQ(cl, library(forecastHybrid))
+  clusterEvalQ(cl, library(thief))
+  clusterExport(cl, c("h", "thiefForecast"))
   # Generate the base forecasts for prediction intervals
   forecasts <- pblapply(dat,
                         FUN = function(x) forecast(hybridModel(x, models = "aft", verbose = FALSE),
                                                    h = h, level = 95,
                                                    PI.combination = "mean"),
-                        cl = numCores)
+                        cl = cl)
 
   if(currentSeries != "Yearly"){
     # Create point forecasts from an ensemble
-    arimaRes <- pblapply(X = dat, function(x) thiefForecast(x, h, "arima"), cl = numCores)
-    thetaRes <- pblapply(X = dat, function(x) thiefForecast(x, h, "theta"), cl = numCores)
-    etsRes <- pblapply(X = dat, function(x) thiefForecast(x, h, "ets"), cl = numCores)
+    arimaRes <- pblapply(X = dat, function(x) thiefForecast(x, h, "arima"), cl = cl)
+    thetaRes <- pblapply(X = dat, function(x) thiefForecast(x, h, "theta"), cl = cl)
     # Combine the forecasts
-    combinedForecasts <- combineForecasts(forecasts, list(arimaRes, thetaRes, etsRes))
-    # forecasts <- combinedForecasts
+    combined <- combineForecasts(forecasts, list(arimaRes, thetaRes))
+    # forecasts <- combined
   }
-
+  stopCluster(cl)
   # Write results
   writeResults(forecasts, currentSeries)
 }

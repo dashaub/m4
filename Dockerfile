@@ -27,7 +27,7 @@ RUN apt-get update \
     libblas-dev \
     libbz2-1.0 \
     libcurl3 \
-    libcurl4-openssl-dev \
+    #libcurl4-openssl-dev \
     libicu57 \
     libjpeg62-turbo \
     libopenblas-dev \
@@ -35,7 +35,7 @@ RUN apt-get update \
     libpcre3 \
     libpng16-16 \
     libreadline7 \
-    libssl-dev \
+    #libssl-dev \
     libtiff5 \
     liblzma5 \
     locales \
@@ -52,12 +52,14 @@ RUN apt-get update \
     default-jdk \
     libbz2-dev \
     libcairo2-dev \
+    libcurl4-openssl-dev \
     libpango1.0-dev \
     libjpeg-dev \
     libicu-dev \
     libpcre3-dev \
     libpng-dev \
     libreadline-dev \
+    libssl-dev \
     libtiff5-dev \
     liblzma-dev \
     libx11-dev \
@@ -124,20 +126,18 @@ RUN apt-get update \
   && export MRAN=$MRAN \
   && echo "options(repos = c(CRAN='$MRAN'), download.file.method = 'libcurl')" >> /usr/local/lib/R/etc/Rprofile.site \
   ## Use littler installation scripts
-  && Rscript -e "install.packages(c('littler', 'docopt'), repo = '$MRAN')" \
-  && ln -s /usr/local/lib/R/site-library/littler/examples/install2.r /usr/local/bin/install2.r \
-  && ln -s /usr/local/lib/R/site-library/littler/examples/installGithub.r /usr/local/bin/installGithub.r \
-  && ln -s /usr/local/lib/R/site-library/littler/bin/r /usr/local/bin/r \
+  ##&& Rscript -e "install.packages(c('littler', 'docopt'), repo = '$MRAN')" \
+  ##&& ln -s /usr/local/lib/R/site-library/littler/examples/install2.r /usr/local/bin/install2.r \
+  ##&& ln -s /usr/local/lib/R/site-library/littler/examples/installGithub.r /usr/local/bin/installGithub.r \
+  ##&& ln -s /usr/local/lib/R/site-library/littler/bin/r /usr/local/bin/r \
   ## Install other R packages
-  && Rscript -e 'install.packages("devtools")' \
   && Rscript -e 'install.packages("forecast")' \
-  && Rscript -e 'devtools::install_github("ellisp/forecastHybrid/pkg", ref = "c928178a43ed43d457d86230a2edd8f3b57cf61c")' \
-  && Rscript -e 'install.packages(c("thief", "data.table", "pbapply"))' \
-  ## TEMPORARY WORKAROUND to get more robust error handling for install2.r prior to littler update
-  && curl -O /usr/local/bin/install2.r https://github.com/eddelbuettel/littler/raw/master/inst/examples/install2.r \
-  && chmod +x /usr/local/bin/install2.r \
-  ## Get files
-  #&& git clone --depth 1 https://github.com/dashaub/m4.git \
+  && Rscript -e 'install.packages(c("thief", "data.table", "pbapply", "forecastHybrid"))' \
+  ## Install latest forecastHybrid
+  && wget https://github.com/ellisp/forecastHybrid/archive/master.zip \
+  && unzip master.zip \
+  && R CMD INSTALL forecastHybrid-master/pkg \
+  && rm -rf master.zip forecastHybrid-master \
   && rm -rf ~/m4/.git/ ~/m4/objects ~/m4/logs ~/m4/hooks ~/m4/info ~/m4/Data \
   ## Clean up from R source install
   && cd / \
@@ -147,4 +147,4 @@ RUN apt-get update \
   && apt-get autoclean -y \
   && rm -rf /var/lib/apt/lists/*
 
-#CMD ["R"]
+#CMD ["~/m4/forecastM4.sh"]
