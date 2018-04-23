@@ -13,8 +13,6 @@ ENV R_VERSION=${R_VERSION:-3.4.4} \
     LANG=en_US.UTF-8 \
     TERM=xterm
 
-COPY * /root/m4/
-
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     bash-completion \
@@ -27,7 +25,6 @@ RUN apt-get update \
     libblas-dev \
     libbz2-1.0 \
     libcurl3 \
-    #libcurl4-openssl-dev \
     libicu57 \
     libjpeg62-turbo \
     libopenblas-dev \
@@ -35,7 +32,6 @@ RUN apt-get update \
     libpcre3 \
     libpng16-16 \
     libreadline7 \
-    #libssl-dev \
     libtiff5 \
     liblzma5 \
     locales \
@@ -133,12 +129,6 @@ RUN apt-get update \
   ## Install other R packages
   && Rscript -e 'install.packages("forecast")' \
   && Rscript -e 'install.packages(c("thief", "data.table", "pbapply", "forecastHybrid"))' \
-  ## Install latest forecastHybrid
-  && wget https://github.com/ellisp/forecastHybrid/archive/master.zip \
-  && unzip master.zip \
-  && R CMD INSTALL forecastHybrid-master/pkg \
-  && rm -rf master.zip forecastHybrid-master \
-  && rm -rf ~/m4/.git/ ~/m4/objects ~/m4/logs ~/m4/hooks ~/m4/info ~/m4/Data \
   ## Clean up from R source install
   && cd / \
   && rm -rf /tmp/* \
@@ -146,5 +136,13 @@ RUN apt-get update \
   && apt-get autoremove -y \
   && apt-get autoclean -y \
   && rm -rf /var/lib/apt/lists/*
+
+COPY * /root/m4/
+
+RUN wget https://github.com/ellisp/forecastHybrid/archive/master.zip \
+  && unzip master.zip \
+  && R CMD INSTALL forecastHybrid-master/pkg \
+  && rm -rf master.zip forecastHybrid-master \
+  && rm -rf ~/m4/.git/ ~/m4/objects ~/m4/logs ~/m4/hooks ~/m4/info ~/m4/Data
 
 #CMD ["~/m4/forecastM4.sh"]

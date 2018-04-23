@@ -2,6 +2,7 @@
 
 set -euo pipefail
 
+cd ~/m4
 ~/m4/DownloadData.sh
 
 Rscript /root/m4/forecastM4.R

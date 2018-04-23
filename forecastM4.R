@@ -8,7 +8,6 @@ numCores <- 6
 inputs <- c("Hourly", "Daily", "Weekly", "Monthly", "Quarterly", "Yearly")
 paths <- paste0("~/m4/Data/", inputs,  "-train.csv")
 
-
 getHorizon <- function(input){
   tab <- c("Hourly" = 48, "Daily" = 14, "Weekly" = 13, "Monthly" = 18, "Quarterly" = 8, "Yearly" = 6)
   return(as.numeric(tab[input]))
@@ -59,10 +58,7 @@ writeResults <- function(forecastList, seriesName){
   }
 }
 
-# Temporary for debug
-# Completed hourly, daily, yearly
-#(weekly need at least 2 periods and fails for arimaThief and thetaThief, succeed for point, succeed on reconcile
-# monthly succeed with n=200 and single core)
+
 for(currentSeries in inputs){
   message("Processing ", currentSeries)
   inputPath <- paste0("~/m4/Data/", currentSeries, "-train.csv")
@@ -75,8 +71,6 @@ for(currentSeries in inputs){
   # Transform to list
   dat <- apply(dat, MARGIN = 1, FUN = function(x) extractList(x, currentSeries))
   names(dat) <- seriesNames
-  set.seed(1234)
-  dat <- sample(dat, 6)
   gc()
 
   cl <- makeCluster(numCores)
@@ -95,8 +89,7 @@ for(currentSeries in inputs){
     arimaRes <- pblapply(X = dat, function(x) thiefForecast(x, h, "arima"), cl = cl)
     thetaRes <- pblapply(X = dat, function(x) thiefForecast(x, h, "theta"), cl = cl)
     # Combine the forecasts
-    combined <- combineForecasts(forecasts, list(arimaRes, thetaRes))
-    # forecasts <- combined
+    forecasts <- combineForecasts(forecasts, list(arimaRes, thetaRes))
   }
   stopCluster(cl)
   # Write results
