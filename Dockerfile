@@ -8,7 +8,7 @@ LABEL org.label-schema.license="GPL-2.0" \
 ARG R_VERSION
 ARG BUILD_DATE
 ENV BUILD_DATE ${BUILD_DATE:-}
-ENV R_VERSION=${R_VERSION:-3.4.4} \
+ENV R_VERSION=${R_VERSION:-3.5.0} \
     LC_ALL=en_US.UTF-8 \
     LANG=en_US.UTF-8 \
     TERM=xterm
@@ -91,10 +91,10 @@ RUN apt-get update \
     R_PRINTCMD=/usr/bin/lpr \
     LIBnn=lib \
     AWK=/usr/bin/awk \
-    CFLAGS="-g -O2 -march=native -pipe -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g" \
-    CXXFLAGS="-g -O2 -march=native -pipe -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g" \
-    FFLAGS="-g -O2 -march=native -pipe" \
-    FCFLAGS="-g -O2 -march=native -pipe"\
+    CFLAGS="-g -O2 -mtune=native -pipe -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g" \
+    CXXFLAGS="-g -O2 -mtune=native -pipe -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g" \
+    FFLAGS="-g -O2 -mtune=native -pipe" \
+    FCFLAGS="-g -O2 -mtune=native -pipe"\
   ## Configure options
   ./configure --enable-R-shlib \
                --enable-memory-profiling \
@@ -128,7 +128,7 @@ RUN apt-get update \
   ##&& ln -s /usr/local/lib/R/site-library/littler/bin/r /usr/local/bin/r \
   ## Install other R packages
   && Rscript -e 'install.packages("forecast")' \
-  && Rscript -e 'install.packages(c("thief", "data.table", "pbapply", "forecastHybrid"))' \
+  && Rscript -e 'install.packages(c("thief", "data.table", "forecastHybrid"))' \
   ## Clean up from R source install
   && cd / \
   && rm -rf /tmp/* \
