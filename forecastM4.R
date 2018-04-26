@@ -2,7 +2,7 @@ library(thief)
 library(forecastHybrid)
 library(data.table)
 library(parallel)
-numCores <- 6
+numCores <- 1
 
 inputs <- c("Hourly", "Daily", "Weekly", "Monthly", "Quarterly", "Yearly")
 paths <- paste0("~/m4/Data/", inputs,  "-train.csv")
