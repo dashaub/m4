@@ -10,17 +10,23 @@ Install [docker](https://www.docker.com/). On Windows/OSX, you may need to modif
 
 Build the docker image
 ```
-docker build . -t m4:5.0 --build-arg BUILD_DATE=2018-04-20 --compress
+docker build .  --compress -t m4:5.0 --build-arg BUILD_DATE=2018-04-20
 ```
 
 Note that the `BUILD_DATE` should _not_ be modified if a reproducible build is desired since this pins the versions of the packages installed to those available at this date.
 
 ## Forecasts
 
-Creating the forecasts is computationally expensive and could take around one week on a fast multi-core system. Run the image:
+Creating the forecasts is computationally expensive and could take several weeks. Run the image:
 ```
 docker run -it --name forecastHybrid m4:5.0 /root/m4/forecastM4.sh
 ```
+
+To produce forecasts for only a single series (e.g. `Hourly`), pass the series name as an argument:
+```
+docker run -it --name forecastHybrid m4:5.0 /root/m4/forecastM4.sh Hourly
+```
+
 If the process completes successfully, you will receive a message in the console:
 ```
 Point forecasts and prediction intervals created successfully!

@@ -5,7 +5,13 @@ library(pblapply)
 #library(parallel)
 numCores <- 1
 
-inputs <- c("Hourly", "Daily", "Weekly", "Monthly", "Quarterly", "Yearly")
+args = commandArgs(trailingOnly=TRUE)
+
+if(length(args) == 0){
+  inputs <- args
+  } else{
+  inputs <- c("Hourly", "Daily", "Weekly", "Monthly", "Quarterly", "Yearly")
+  }
 paths <- paste0("~/m4/Data/", inputs,  "-train.csv")
 
 getHorizon <- function(input){
