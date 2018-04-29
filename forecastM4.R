@@ -1,7 +1,8 @@
 library(thief)
 library(forecastHybrid)
 library(data.table)
-library(parallel)
+library(pblapply)
+#library(parallel)
 numCores <- 1
 
 inputs <- c("Hourly", "Daily", "Weekly", "Monthly", "Quarterly", "Yearly")
@@ -57,7 +58,7 @@ writeResults <- function(forecastList, seriesName){
   }
 }
 
-inputs <- "Monthly"
+#inputs <- "Monthly"
 for(currentSeries in inputs){
   message("Processing ", currentSeries)
   inputPath <- paste0("~/m4/Data/", currentSeries, "-train.csv")
@@ -72,25 +73,26 @@ for(currentSeries in inputs){
   names(dat) <- seriesNames
   gc()
 
-  cl <- makeCluster(numCores)
-  clusterEvalQ(cl, library(forecastHybrid))
-  clusterEvalQ(cl, library(thief))
-  clusterExport(cl, c("h", "thiefForecast"))
+  #cl <- makeCluster(numCores)
+  cl <- numCores
+  #clusterEvalQ(cl, library(forecastHybrid))
+  #clusterEvalQ(cl, library(thief))
+  #clusterExport(cl, c("h", "thiefForecast"))
   # Generate the base forecasts for prediction intervals
-  forecasts <- parLapplyLB(cl = cl, X = dat,
+  forecasts <- pblapply(cl = cl, X = dat,
                            function(x) forecast(hybridModel(x, models = "aft", verbose = FALSE),
                                                 h = h, level = 95,
                                                 PI.combination = "mean"))
   gc()
   if(currentSeries != "Yearly"){
     # Create point forecasts from an ensemble
-    arimaRes <- parLapplyLB(cl = cl, X = dat, function(x) thiefForecast(x, h, "arima"))
+    arimaRes <- pblapply(cl = cl, X = dat, function(x) thiefForecast(x, h, "arima"))
     gc()
-    thetaRes <- parLapplyLB(cl = cl, X = dat, function(x) thiefForecast(x, h, "theta"))
+    thetaRes <- pblapply(cl = cl, X = dat, function(x) thiefForecast(x, h, "theta"))
     # Combine the forecasts
     forecasts <- combineForecasts(forecasts, list(arimaRes, thetaRes))
   }
-  stopCluster(cl)
+  #stopCluster(cl)
   # Write results
   writeResults(forecasts, currentSeries)
 }

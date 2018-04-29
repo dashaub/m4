@@ -127,7 +127,7 @@ RUN apt-get update \
   ##&& ln -s /usr/local/lib/R/site-library/littler/examples/installGithub.r /usr/local/bin/installGithub.r \
   ##&& ln -s /usr/local/lib/R/site-library/littler/bin/r /usr/local/bin/r \
   ## Install other R packages
-  && Rscript -e 'install.packages("forecast")' \
+  && Rscript -e 'install.packages(c("forecast", "pbapply"))' \
   && Rscript -e 'install.packages(c("thief", "data.table", "forecastHybrid"))' \
   ## Clean up from R source install
   && cd / \
