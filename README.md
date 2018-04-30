@@ -22,9 +22,9 @@ Creating the forecasts is computationally expensive and could take several weeks
 docker run -it --name forecastHybrid m4:5.0 /root/m4/forecastM4.sh
 ```
 
-To produce forecasts for only a single series (e.g. `Hourly`), pass the series name as an argument:
+To produce forecasts for only a single series (e.g. `Daily`), pass the series name as an argument. It can also be especially useful to change the container name to something descriptive if you wish to launch several containers simultaneously.
 ```
-docker run -it --name forecastHybrid m4:5.0 /root/m4/forecastM4.sh Hourly
+docker run -it --name forecastHybridDaily m4:5.0 /root/m4/forecastM4.sh Daily
 ```
 
 If the process completes successfully, you will receive a message in the console:

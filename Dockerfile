@@ -122,10 +122,6 @@ RUN apt-get update \
   && export MRAN=$MRAN \
   && echo "options(repos = c(CRAN='$MRAN'), download.file.method = 'libcurl')" >> /usr/local/lib/R/etc/Rprofile.site \
   ## Use littler installation scripts
-  ##&& Rscript -e "install.packages(c('littler', 'docopt'), repo = '$MRAN')" \
-  ##&& ln -s /usr/local/lib/R/site-library/littler/examples/install2.r /usr/local/bin/install2.r \
-  ##&& ln -s /usr/local/lib/R/site-library/littler/examples/installGithub.r /usr/local/bin/installGithub.r \
-  ##&& ln -s /usr/local/lib/R/site-library/littler/bin/r /usr/local/bin/r \
   ## Install other R packages
   && Rscript -e 'install.packages(c("forecast", "pbapply"))' \
   && Rscript -e 'install.packages(c("thief", "data.table", "forecastHybrid"))' \
@@ -143,6 +139,6 @@ RUN wget https://github.com/ellisp/forecastHybrid/archive/master.zip \
   && unzip master.zip \
   && R CMD INSTALL forecastHybrid-master/pkg \
   && rm -rf master.zip forecastHybrid-master \
-  && rm -rf ~/m4/.git/ ~/m4/objects ~/m4/logs ~/m4/hooks ~/m4/info ~/m4/Data
-
-#CMD ["~/m4/forecastM4.sh"]
+  && rm -rf ~/m4/.git/ ~/m4/objects ~/m4/logs ~/m4/hooks ~/m4/info \
+  && cd ~/m4 \
+  && ./DownloadData.sh
