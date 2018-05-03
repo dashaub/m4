@@ -38,5 +38,5 @@ To copy all of these results back to the host filesystem, run the following comm
 ```
 $ docker cp forecastHybrid:/root/m4/mean .
 $ docker cp forecastHybrid:/root/m4/upper .
-$ docker cp forecastHybrid:/root/m4/mean .
+$ docker cp forecastHybrid:/root/m4/lower .
 ```

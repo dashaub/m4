@@ -57,8 +57,8 @@ writeResults <- function(forecastList, seriesName, floorZero = TRUE){
     dir.create(file.path(baseDir), showWarnings = FALSE)
     forecasts <- data.frame(t(data.frame(lapply(forecastList, FUN = function(x) x[[component]]))))
     forecasts <- round(forecasts, 4)
-    if(component == "lower" && floorZero){
-     forecasts[forecasts < 0] <- 0
+    if(floorZero){
+    forecasts[forecasts < 0] <- 0
     }
     rownames(forecasts) <- names(forecastList)
     filename <- paste0(baseDir, "/", seriesName, "-", component, ".csv")
