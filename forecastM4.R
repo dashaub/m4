@@ -1,8 +1,6 @@
 library(thief)
 library(forecastHybrid)
 library(data.table)
-library(pbapply)
-cl <- numCores <- 1
 
 args = commandArgs(trailingOnly = TRUE)
 
@@ -44,10 +42,10 @@ extractList <- function(x, seriesName){
 }
 
 thiefForecast <- function(x, horizon, model){
-    if(length(x) < 2 * frequency(x)){
-        return(NULL)
-    }
-    return(thief(y = x, h = horizon, usemodel = model))
+  if(length(x) < 2 * frequency(x)){
+    return(NULL)
+  }
+  return(thief(y = x, h = horizon, usemodel = model))
 }
 
 writeResults <- function(forecastList, seriesName, floorZero = TRUE){
@@ -58,7 +56,7 @@ writeResults <- function(forecastList, seriesName, floorZero = TRUE){
     forecasts <- data.frame(t(data.frame(lapply(forecastList, FUN = function(x) x[[component]]))))
     forecasts <- round(forecasts, 4)
     if(floorZero){
-    forecasts[forecasts < 0] <- 0
+      forecasts[forecasts < 0] <- 0
     }
     rownames(forecasts) <- names(forecastList)
     filename <- paste0(baseDir, "/", seriesName, "-", component, ".csv")
@@ -79,14 +77,14 @@ for(currentSeries in inputs){
   dat <- apply(dat, MARGIN = 1, FUN = function(x) extractList(x, currentSeries))
   names(dat) <- seriesNames
 
-  forecasts <- pblapply(cl = cl, X = dat,
-                        function(x) forecast(hybridModel(x, models = "aft", verbose = FALSE),
-                                             h = h, level = 95,
-                                             PI.combination = "mean"))
+  forecasts <- lapply(X = dat,
+                      function(x) forecast(hybridModel(x, models = "aft", verbose = FALSE),
+                                           h = h, level = 95,
+                                           PI.combination = "mean"))
   if(currentSeries != "Yearly"){
     # Create point forecasts from an ensemble
-    arimaRes <- pblapply(cl = cl, X = dat, function(x) thiefForecast(x, h, "arima"))
-    thetaRes <- pblapply(cl = cl, X = dat, function(x) thiefForecast(x, h, "theta"))
+    arimaRes <- lapply(X = dat, function(x) thiefForecast(x, h, "arima"))
+    thetaRes <- lapply(X = dat, function(x) thiefForecast(x, h, "theta"))
     # Combine the forecasts
     forecasts <- combineForecasts(forecasts, list(arimaRes, thetaRes))
   }

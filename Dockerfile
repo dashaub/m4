@@ -1,9 +1,7 @@
 FROM debian:stretch
 
 LABEL org.label-schema.license="GPL-2.0" \
-      org.label-schema.vcs-url="https://github.com/rocker-org/rocker-versioned" \
-      org.label-schema.vendor="Rocker Project" \
-      maintainer="Carl Boettiger <cboettig@ropensci.org>"
+      maintainer="David Shaub"
 
 ARG R_VERSION
 ARG BUILD_DATE
@@ -123,7 +121,6 @@ RUN apt-get update \
   && echo "options(repos = c(CRAN='$MRAN'), download.file.method = 'libcurl')" >> /usr/local/lib/R/etc/Rprofile.site \
   ## Use littler installation scripts
   ## Install other R packages
-  && Rscript -e 'install.packages(c("forecast", "pbapply"))' \
   && Rscript -e 'install.packages(c("thief", "data.table", "forecastHybrid"))' \
   ## Clean up from R source install
   && cd / \
@@ -135,10 +132,8 @@ RUN apt-get update \
 
 COPY * /root/m4/
 
-RUN wget https://github.com/ellisp/forecastHybrid/archive/master.zip \
-  && unzip master.zip \
-  && R CMD INSTALL forecastHybrid-master/pkg \
-  && rm -rf master.zip forecastHybrid-master \
-  && rm -rf ~/m4/.git/ ~/m4/objects ~/m4/logs ~/m4/hooks ~/m4/info \
+RUN rm -rf ~/m4/.git/ ~/m4/objects ~/m4/logs ~/m4/hooks ~/m4/info \
   && cd ~/m4 \
   && ./DownloadData.sh
+
+CMD ["bash"]
