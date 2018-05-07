@@ -10,7 +10,7 @@ Install [docker](https://www.docker.com/). On Windows/OSX, you may need to modif
 
 Build the docker image
 ```
-docker build .  --compress -t m4:5.0 --build-arg BUILD_DATE=2018-05-06
+docker build .  --compress -t m4:5.0 --build-arg BUILD_DATE=2018-05-07
 ```
 
 Note that the `BUILD_DATE` should _not_ be modified if a reproducible build is desired since this pins the versions of the packages installed to those available at this date.
