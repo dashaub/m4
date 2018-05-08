@@ -6,11 +6,11 @@ $ git clone https://github.com/dashaub/m4.git
 $ cd m4
 ```
 
-Install [docker](https://www.docker.com/). On Windows/OSX, you may need to modify preferences of the Docker daemon to utilize more than 2 CPU cores and allow up to 8GB RAM usage. As necessary, modify `numCores <- 6` in `loadData.R` to specify the number of cores to run during the forecasting.
+Install [docker](https://www.docker.com/). On Windows/OSX, you may need to modify preferences of the Docker daemon to utilize more than 2 CPU cores and allow up to 8GB RAM usage.
 
-Build the docker image
+Build the docker image:
 ```
-docker build .  --compress -t m4:5.0 --build-arg BUILD_DATE=2018-05-07
+docker build .  --compress -t m4:5.0 --build-arg BUILD_DATE=2018-05-08
 ```
 
 Note that the `BUILD_DATE` should _not_ be modified if a reproducible build is desired since this pins the versions of the packages installed to those available at this date.
@@ -21,6 +21,8 @@ Creating the forecasts is computationally expensive and could take several weeks
 ```
 docker run -it --name forecastHybrid m4:5.0 /root/m4/forecastM4.sh
 ```
+
+Running the job like this will forecast each series serially and can take 2-3 weeks on a fast CPU. Instead you may wish to launch several individual forecasting processes simultaneously by launching a container for a single series.
 
 To produce forecasts for only a single series (e.g. `Daily`), pass the series name as an argument. It can also be especially useful to change the container name to something descriptive if you wish to launch several containers simultaneously.
 ```
