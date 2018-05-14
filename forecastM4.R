@@ -83,6 +83,7 @@ for(currentSeries in inputs){
                                            PI.combination = "mean"))
   if(currentSeries != "Yearly"){
     # Create point forecasts from an ensemble
+    message("Processing ", currentSeries, " point forecasts")
     arimaRes <- lapply(X = dat, function(x) thiefForecast(x, h, "arima"))
     thetaRes <- lapply(X = dat, function(x) thiefForecast(x, h, "theta"))
     # Combine the forecasts
