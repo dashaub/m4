@@ -77,8 +77,9 @@ for(currentSeries in inputs){
   dat <- apply(dat, MARGIN = 1, FUN = function(x) extractList(x, currentSeries))
   names(dat) <- seriesNames
 
+  models <- ifelse(currentSeries == "Monthly", "fs", "aft")
   forecasts <- lapply(X = dat,
-                      function(x) forecast(hybridModel(x, models = "aft", verbose = FALSE),
+                      function(x) forecast(hybridModel(x, models = models, verbose = FALSE),
                                            h = h, level = 95,
                                            PI.combination = "mean"))
   if(currentSeries != "Yearly"){
