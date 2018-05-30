@@ -9,9 +9,9 @@ cleanUpper <- function(x){
   order <- arimaorder(auto.arima(parsedSeries))[2]
   # Prevent explosive growth
   if(order > 1 && tail(parsedSeries, 1) / head(parsedSeries, 1) > 10){
-    multFactor <- seq(1, by = 0.25, length.out = length(parsedSeries))
+    multFactor <- seq(1, by = 0.025, length.out = length(parsedSeries))
     parsedSeries <- mean(head(parsedSeries, 2)) * multFactor
-    results <- paste(c(seriesName, parsedSeries), sep = ",", collapse = "")
+    results <- paste(c(seriesName, parsedSeries), collapse = ",")
   }
   return(results)
 }
