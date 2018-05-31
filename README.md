@@ -42,3 +42,11 @@ $ docker cp forecastHybrid:/root/m4/mean .
 $ docker cp forecastHybrid:/root/m4/upper .
 $ docker cp forecastHybrid:/root/m4/lower .
 ```
+
+The forecasts can be combined into a single file:
+```
+cat upper/*.csv > upper_submission.csv
+cat lower/*.csv > lower_submission.csv
+cat mean/*.csv > mean_submission.csv
+```
+To prevent exponential upper-bound growth in the prediction intervals, it can be useful to run `cleanUpper.R` to adjust series that exhibit this explosive growth.
