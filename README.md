@@ -34,9 +34,9 @@ If the process completes successfully, you will receive a message in the console
 Point forecasts and prediction intervals created successfully!
 Pressing enter will exit and erase all results.
 ```
-Before exiting, you will wish to copy the results from the Docker container to your filesystem. The forecasts will appear **inside** the docker container in the `mean/` directory; the upper/lower 95% prediction intervals will appear in `upper/` and `lower/`, respectively. In another terminal (_not_ inside the docker container), run the script `./copyFromContainer.sh` to copy the forecasts from the container to your filesystem. The `mean/`, `upper/', and `lower/` directories of your local filesystem will now contain the forecasts and prediction intervals, and you can safely exit and destroy the container.
+Before exiting, you will wish to copy the results from the Docker container to your filesystem. The forecasts will appear **inside** the docker container in the `mean/` directory; the upper/lower 95% prediction intervals will appear in `upper/` and `lower/`, respectively. In another terminal (_not_ inside the docker container), use `docker cp` to copy the forecasts from the container to your filesystem. The `mean/`, `upper/', and `lower/` directories of your local filesystem will now contain the forecasts and prediction intervals, and you can safely exit and destroy the container.
 
-To copy all of these results back to the host filesystem, run the following commands:
+To copy all of these results back to the host filesystem, run the following commands (where `forecastHybrid` is the name of the docker continer):
 ```
 $ docker cp forecastHybrid:/root/m4/mean .
 $ docker cp forecastHybrid:/root/m4/upper .
