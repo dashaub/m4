@@ -1,0 +1,102 @@
+% Template for articles submitted to the International Journal of Forecasting
+% Further instructions are available at www.ctan.org/pkg/elsarticle
+% You only need to submit the pdf file, not the source files.
+% If your article is accepted for publication, you will be asked for the source files.
+
+
+\documentclass[11pt,3p,review,authoryear]{elsarticle}
+
+\usepackage{listings}
+\usepackage{color}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{dkred}{rgb}{0.6,0,0}
+
+\lstset{frame=tb,
+  language=R,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{dkred},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3
+}
+
+\journal{International Journal of Forecasting}
+\bibliographystyle{model5-names}
+\biboptions{longnamesfirst}
+% Please use \citet and \citep for citations.
+
+
+\begin{document}
+
+\begin{frontmatter}
+
+\title{Fast and Accurate Forecasting on Yearly Time Series with Simple Forecast Combinations}
+
+%% AUTHORS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Leave this section commented out so that the paper is blinded for review.
+%% Group authors per affiliation:
+% \author[ss]{David Shaub\corref{cor}}
+% \address[ss]{Harvard University Extension School}
+
+
+%% Only give the email address of the corresponding author
+% \cortext[cor]{Corresponding author}
+% \ead{davidshaub@g.harvard.edu}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\begin{abstract}
+Combination forecasting strategies have long been known to produce superior out-of-sample forecasting performance relative to even its best single component models. In the M4 forecasting competetion, this approach was harnessed to produce a very simple forecast combination strategy that achieved competetive performance on yearly time series. Moreover, the model fits very quickly, can easily scale horizontally with additional CPU cores or machines, and can very quickly and easily be implemented by users. This approach might be of particular interest to users who need accurate yearly forecasts without significant time, resources, or expertise to tune models. Users of the R statistical programming language can access this model in the "forecastHybrid" package.
+\end{abstract}
+
+\begin{keyword}
+Automatic forecasting\sep Combining forecasts\sep Evaluating forecasts\sep Forecasting competitions\sep Software
+% Suggested keywords are listed at https://ijf.forecasters.org/keywords/
+\end{keyword}
+
+\end{frontmatter}
+
+
+\section{Introduction}
+Model selection presents a challenge for forecasters since selecting the incorrect model leads to additional forecasting error. One hedge against incorrect model specification is the combination of forecasts from several candidate models. Granger \& Bates \cite{GrangerBates1964} first suggested such an approach and observed that somewhat surprinsingly the combined forecast can even outperform that single best performing component forecast. While combination weights selected equally or proportionally to past model error are possible approaches, no shortage of combination schemes have been suggested. For example, instead of normalizing weights to sum to unity, unconstrained (and even negative) weights could be possible \citep{GrangerRamanathan1984}.
+
+It would appear that the simplest approach of assigning equal weights to all component models is woefully obsolete and likely uncompetetive compared to the multitude of sophisticated combination approaches. However, results from the 2018 M4 competetion show that such a simple approach can still be competetive, particularly for yearly time series where the method achieved 3rd place.
+
+This article is organized as follows: section 2 describes the combination methodology, section 3 contains analysis of the performance characteristics of this model in the M4 competetion, and section 4 concludes.
+
+\section{Methodology}
+The combination strategy employed in the M4 competetion submission utilized the statistical programming language R \citep{Rlang} and leveraged the "forecastHybrid" \citep{forecastHybrid}. The component models allowed in the "forecastHybrid" package are models built from `auto.arima()`, `ets()`, `thetaf()`, `nnetar()`, `stlm()`, `tbats()`, and `snaive()` as provided in \citep{Forecast}.
+
+
+The following R code produces this forecast combination for a single yearly timeseries $x$ and a forecasting horizon $h = 6$ along with 95\% prediction intervals.
+\begin{lstlisting}[language=R]
+forecastM4 <- function(x, h = 6){
+    fc <- forecast(hybridModel(x, models = "aft", verbose = FALSE),
+                   level = 95, PI.combination = "mean")
+    return(fc)
+}
+\end{lstlisting}
+
+\section{Analysis}
+
+\section{Conclusion}
+
+\section*{Acknowledgements}
+
+This research did not receive any specific grant from funding agencies in the public, commercial, or not-for-profit sectors.
+
+
+% Bibliography.
+\bibliography{refs}
+
+\end{document}
