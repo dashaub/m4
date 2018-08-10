@@ -68,22 +68,21 @@ Automatic forecasting\sep Combining forecasts\sep Evaluating forecasts\sep Forec
 
 
 \section{Introduction}
-Model selection presents a challenge for forecasters since selecting the incorrect model leads to additional forecasting error. One hedge against incorrect model specification is the combination of forecasts from several candidate models. Granger \& Bates \cite{GrangerBates1964} first suggested such an approach and observed that somewhat surprinsingly the combined forecast can even outperform that single best performing component forecast. While combination weights selected equally or proportionally to past model error are possible approaches, no shortage of combination schemes have been suggested. For example, instead of normalizing weights to sum to unity, unconstrained (and even negative) weights could be possible \citep{GrangerRamanathan1984}.
+Model selection presents a challenge for forecasters since selecting the incorrect model leads to additional forecasting error. One hedge against incorrect model specification is the combination of forecasts from several candidate models. Granger \& Bates \cite{GrangerBates1964} first suggested such an approach and observed that somewhat surprinsingly the combined forecast can even outperform that single best performing component forecast. While combination weights selected equally or proportionally to past model error are possible approaches, no shortage of combination schemes have been suggested. For example, instead of normalizing weights to sum to unity, unconstrained--and even negativd--weights could be possible \citep{GrangerRamanathan1984}.
 
 It would appear that the simplest approach of assigning equal weights to all component models is woefully obsolete and likely uncompetetive compared to the multitude of sophisticated combination approaches. However, results from the 2018 M4 competetion show that such a simple approach can still be competetive, particularly for yearly time series where the method achieved 3rd place.
 
 This article is organized as follows: section 2 describes the combination methodology, section 3 contains analysis of the performance characteristics of this model in the M4 competetion, and section 4 concludes.
 
 \section{Methodology}
-The combination strategy employed in the M4 competetion submission utilized the statistical programming language R \citep{Rlang} and leveraged the "forecastHybrid" \citep{forecastHybrid}. The component models allowed in the "forecastHybrid" package are models built from `auto.arima()`, `ets()`, `thetaf()`, `nnetar()`, `stlm()`, `tbats()`, and `snaive()` as provided in \citep{Forecast}.
+The combination strategy employed in the M4 competetion submission utilized the statistical programming language R \citep{Rlang} and leveraged the "forecastHybrid" \citep{forecastHybrid}. The component models allowed in the "forecastHybrid" package are the  \lstinline{auto.arima()}, \lstinline{ets()}, \lstinline{thetaf()}, \lstinline{nnetar()}, \lstinline{stlm()}, \lstinline{tbats()}, and \lstinline{snaive()} models provided in "forecast" package \citep{Forecast}.
 
 
-The following R code produces this forecast combination for a single yearly timeseries $x$ and a forecasting horizon $h = 6$ along with 95\% prediction intervals.
+The following R code produces this forecast combination for a single yearly timeseries \lstinline{x} and a forecasting horizon \lstinline{h = 6} along with 95\% prediction intervals.
 \begin{lstlisting}[language=R]
 forecastM4 <- function(x, h = 6){
-    fc <- forecast(hybridModel(x, models = "aft", verbose = FALSE),
-                   level = 95, PI.combination = "mean")
-    return(fc)
+    return(forecast(hybridModel(x, models = "aft", verbose = FALSE),
+                      h = h, level = 95, PI.combination = "mean"))
 }
 \end{lstlisting}
 
