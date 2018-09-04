@@ -49,3 +49,6 @@ vignettes/*.pdf
 *.blg
 *.bak
 *.pdf
+
+#
+.DS_STORE
