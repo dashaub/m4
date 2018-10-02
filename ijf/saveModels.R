@@ -73,7 +73,7 @@ chooseBestModel <- function(x){
 
 # Combine the model and data into a single list so we can easily parallelize
 packageModelsAndData <- function(models, data){
-  output <- x <- vector(mode = "list", length = length(models))
+  output <- vector(mode = "list", length = length(models))
   for(i in seq_along(models)){
     output[[i]] <- list(model = models[[i]], data = data[[i]])
   }
@@ -81,5 +81,8 @@ packageModelsAndData <- function(models, data){
 }
 
 modelsAndData <- packageModelsAndData(subsetMods, dat)
+rm(subsetMods)
+gc()
+
 bestMods <- pblapply(modelsAndData, function(x) chooseBestModel(x), cl = numCores)
 save(bestMods, file = "bestMods.RData")
