@@ -4,6 +4,7 @@ library(pbapply)
 library(forecastHybrid)
 library(xtable)
 library(ggplot2)
+library(reshape2)
 
 numCores <- 2
 
@@ -64,8 +65,17 @@ ensembleMASE <- calculateMASE(ensembleForecasts)
 selectionMASE <- calculateMASE(selectionForecasts)
 oracleMASE <- calculateMASE(oracleForecasts)
 save(ensembleMASE, oracleMASE, selectionMASE, file="MASE.RData")
+rm(ensembleForecasts, selectionForecasts, oracleForecasts)
+
+MASE <- data.frame(selection = selectionMASE, ensemble = ensembleMASE)# , oracle = oracleMASE
+MASE <- melt(MASE)
+MASE$MASE <- MASE$value
+MASE$model <- MASE$variable
+MASE$value <- MASE$variable <- NULL
 
 ####################################################################################################
 # Distributions
 ####################################################################################################
-
+png("distribution.png", width = 1200, height = 720)
+ggplot(MASE, aes(x=log(MASE), fill = model)) + geom_density(alpha=0.5)
+dev.off()
