@@ -33,15 +33,25 @@ save(oracleForecasts, file = "oracleForecasts.RData")
 # Tables
 ####################################################################################################
 
+# Clean the names of the models for the LaTeX tables
+cleanNames <- function(x){
+    x[x == "ARIMA"] <- "Arima"
+    x[x == "bats"] <- "BATS"
+    x[x == "thetam"] <- "Theta"
+    return(x)
+}
 
-# LaTeX table of distribution of selected best individual models
 load("bestMods.RData")
-bestModDistribution <- table(sapply(bestMods, function(x) class(x)[1]))
+Selection <- cleanNames(sapply(bestMods, function(x) class(x)[1]))
+selectionDistribution <- table(Selection)
 
-# LaTeX table of distribution of selected best individual models from oracle
 load("oracleMods.RData")
-oracleModDistribution <- table(sapply(oracleMods, function(x) class(x)[1]))
+Oracle <- cleanNames(sapply(oracleMods, function(x) class(x)[1]))
+oracleModDistribution <- table(Oracle)
 
+# Confusion matrix of selected model vs oracle
+cm <- confusionMatrix(data=factor(Selection), reference=factor(Oracle))
+xtable(cm$table, caption="Reference best model on test set vs model from selection procedure")
 
 ####################################################################################################
 # MASE calculation
