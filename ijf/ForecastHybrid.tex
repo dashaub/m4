@@ -11,6 +11,7 @@
 \usepackage{graphicx}
 \usepackage{multirow}
 \usepackage{array,rotating}
+\usepackage{adjustbox}
 
 \definecolor{dkgreen}{rgb}{0,0.6,0}
 \definecolor{gray}{rgb}{0.5,0.5,0.5}
@@ -43,7 +44,7 @@
 
 \begin{frontmatter}
 
-\title{Fast and Accurate Forecasting on Yearly Time Series with Forecast Combinations}
+\title{Fast and Accurate Yearly Time Series Forecasting with Forecast Combinations}
 
 %% AUTHORS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Leave this section commented out so that the paper is blinded for review.
@@ -59,7 +60,7 @@
 
 
 \begin{abstract}
-Combination forecasting strategies have long been known to produce superior out-of-sample forecasting performance relative to even its best single component models. In the M4 forecasting competition, this approach was harnessed to produce a very simple forecast combination strategy that achieved competitive performance on yearly time series. An analysis of the ensemble model versus the component models suggests the competitive accuracy comes from avoiding poor forecasts instead of beating the best individual models. Moreover, the model fits very quickly, can easily scale horizontally with additional CPU cores or machines, and can very quickly and easily be implemented by users. This approach might be of particular interest to users who need accurate yearly forecasts without significant time, resources, or expertise to tune models. Users of the R statistical programming language can access this model in the "forecastHybrid" package.
+Combination forecasting strategies have long been known to produce superior out-of-sample forecasting performance. In the M4 forecasting competition, a very simple forecast combination strategy achieved third place on yearly time series. An analysis of the ensemble model versus the component models suggests the competitive accuracy comes from avoiding poor forecasts instead of beating the best individual models. Moreover, the simple ensemble model fits very quickly, can easily scale horizontally with additional CPU cores or a cluster of computers, and can very quickly and easily be implemented by users. This approach might be of particular interest to users who need accurate yearly forecasts without significant time, resources, or expertise to tune models. Users of the R statistical programming language can access this modeling approach in the "forecastHybrid" package.
 \end{abstract}
 
 \begin{keyword}
@@ -71,9 +72,9 @@ Automatic forecasting\sep Combining forecasts\sep Evaluating forecasts\sep Forec
 
 
 \section{Introduction}
-Model selection presents a challenge for forecasters since selecting the incorrect model leads to additional forecasting error. One hedge against incorrect model specification is the combination of forecasts from several candidate models. Granger \& Bates \cite{BatesGranger1969} first suggested such an approach and observed that somewhat surprisingly the combined forecast can even outperform that single best performing component forecast. While combination weights selected equally or proportionally to past model error are possible approaches, no shortage of combination schemes have been suggested. For example, instead of normalizing weights to sum to unity, unconstrained--and even negative--weights could be possible \citep{GrangerRamanathan1984}.
+Model selection presents a challenge for forecasters since selecting the incorrect model leads to additional forecasting error. One hedge against incorrect model specification is a forecast combination from several candidate models. Granger \& Bates \cite{BatesGranger1969} suggested such an approach and observed that somewhat surprisingly the combined forecast can even outperform that single best performing component forecast. While combination weights selected equally or proportionally to past model error are possible approaches, no shortage of more sophisticated combination schemes have been suggested. For example, instead of normalizing weights to sum to unity, unconstrained--and even negative--weights could be possible \citep{GrangerRamanathan1984}.
 
-It would appear that the simplest approach of assigning equal weights to all component models is woefully obsolete and likely noncompetitive compared to the multitude of sophisticated combination approaches. However, results from the 2018 M4 competition show that such a simple approach can still be competitive, particularly for yearly time series where the method achieved 3rd place.
+It might appear that the simplest approach of assigning equal weights to all component models is woefully obsolete and likely noncompetitive compared to the multitude of sophisticated combination approaches or advanced machine learning and neural network forecasting models. However, results from the 2018 M4 competition show that such a simple approach can still be competitive, particularly for yearly time series where the method achieved third place.
 
 This article is organized as follows: section 2 describes the combination methodology, section 3 contains analysis of the performance characteristics of this model in the M4 competition versus individual models, and section 4 concludes.
 
@@ -81,7 +82,7 @@ This article is organized as follows: section 2 describes the combination method
 The combination strategy employed in the M4 competition submission utilized the statistical programming language R \citep{Rlang} and leveraged the "forecastHybrid" \citep{forecastHybrid} package. The component models allowed in the "forecastHybrid" package are the  \lstinline{auto.arima()}, \lstinline{ets()}, \lstinline{thetaf()}, \lstinline{nnetar()}, \lstinline{stlm()}, \lstinline{tbats()}, and \lstinline{snaive()} models provided in "forecast" package \citep{Forecast}.
 
 
-The following R code produces this forecast combination for a single yearly time series \lstinline{x} and a forecasting horizon \lstinline{h = 6} along with 95\% prediction intervals.
+The following R code produces this forecast combination for a single yearly time series \lstinline{x} with a forecasting horizon \lstinline{h = 6} along with 95\% prediction intervals.
 \begin{lstlisting}[language=R]
 forecastM4 <- function(x, h = 6){
     return(forecast(hybridModel(x, models = "aft", verbose = FALSE),
@@ -89,14 +90,47 @@ forecastM4 <- function(x, h = 6){
 }
 \end{lstlisting}
 
+It should be noted, however, that the prediction intervals produced by this methodology are highly dubious: the prediction intervals from each individual component models are similarly averaged together with no account for any possible covariance, and in the M4 competition the approach overestimated the prediction intervals coverage. Since the M4 competition rules and prizes incentivized submission of prediction intervals, they were produced nonetheless, but the submission entry focused attention on the point forecasts.
+
+The forecasting procedure can be parallelized to decrease the time to fit models. This parallelization can be apply both within models and across time series. If a single time series needs to be fit, the three individual component model can each be fit in parallel on a separate CPU core/thread by passing the \texttt{parallel = TRUE} parameter to the \texttt{hybridModel} function, and the \texttt{auto.arima} and \texttt{tbats} models can themselves also use parallel processing. Furthermore, when users need to fit a model and forecast many time series (such as the case of M4's 23000 yearly time series), this forecasting function can be run as a distributed map ope on multiple CPUs or machines in a cluster. For example, if we wish to utilize 16 threads on a server to forecast the M4 time series in a list \texttt{M4Yearly}, we could use the "pbapply" package to map the forecasting task out and also view the results with a progress bar.
+
+\begin{lstlisting}[language=R]
+forecasts <- pblapply(M4Yearly, forecastM4, cl = 16)
+\end{lstlisting}
+
+
+The simplicity of this approach offers great flexibility to practitioners who need to adjust the latency of model training and forecasting without writing much custom or complicated code. Indeed the author's M4 submission for all time series amounted to fewer than 100 lines of R code. Modeling approaches that require building features or training on an entire corpus of training data will not be so readily online or amenable to such an "embarrassingly parallel" workflow.
+
 \section{Analysis}
-We might reasonably question why such a simple and well-known technique of averaging forecasts proved competitive in the M4 yearly series. One hypothesis is that model selection is a difficult problem and more complex forecasting methodologies struggle to select a model that will perform well in the forecasting horizon. The model selection problem for complex models could manifest itself as either the explicit selection between a candidate pool of models (or the weights assigned to these models if using more than one) or the implicit problem of selecting the optimal hyperparameters if a single model is used that has many possible tuning parameters such as neural networks. The examination that follows supports this hypothesis and shows that the mean ensemble approach achieves competitive performance not by producing forecasts that barely miss the actual values but rather by producing fewer forecasts that very badly miss the actual values.
+We might reasonably question why such a simple and well-known technique of averaging forecasts proved competitive in the M4 yearly time series. One hypothesis is that model selection is a difficult problem and more complex forecasting methodologies struggle to select a model that will perform well on out-of-sample data. The model selection problem for complex models could manifest itself as either the explicit selection in a candidate pool of models (or the weights assigned to these models if using more than one) or the implicit problem of selecting the optimal hyperparameters if a single, complex model is used that has many possible tuning parameters such as neural networks. The examination that follows supports this hypothesis and shows that the mean ensemble approach achieves competitive performance not by producing forecasts that barely miss the actual values but rather by producing fewer forecasts that very badly miss the actual values.
+
+
+The separate modeling strategies will be examined here. In the first is the ensemble approach that was used in the M4 submission and that was described in section 2. The second is a model selection procedure that attempts to choose a model for the forecasting period based on the individual model that performs base on a holdout set created in the M4 train data. Since the forecasting horizon is 6 for the yearly data, the final 6 observations of the holdout set were removed and each individual component model (\texttt{auto.arima}, \texttt{thetam}, and \texttt{tbats}) were trained on the truncated train time series and then forecasted against the holdout set. The best individual model based on MASE was then selected and retrained on the original train time series. If multiple models had equivalent MASE (as happens for constant, linear trend, or other time series that each model could perfectly fit in the train and holdout set), a single component model was randomly selected from those that fit the holdout set perfectly. The third and final model for comparison is a reference oracle model that is the individual component model that performs best on the M4 competition evaluation set. This final model is built not as a legitimate contender for a modeling strategy to produce forecasts but rather to evaluate the efficacy of the second model selection procedure and as a benchmark to compare the accuracy of our forecasts against the best we might hope to do in some sense--at least with a single component model from the set of candidate models.
 
 The MASE produced by the simple ensembling procedure on yearly M4 data will be compared against two other forecasting methods for each time series in the M4 yearly data. In the first method, a model selection procedure chooses from the individual component \texttt{auto.arima())}, \texttt{thetam())}, and \texttt{tbats())} models by forming a holdout set on the M4 training data of size equal to the forecasting horizon 6 and selecting the model that minimizes MASE on this holdout set. That model is then retrained on the whole train set before producing forecasts on the M4 holdout set. This method will be called the best component model approach. In the second method, we will instead assume an oracle has selected the individual component model that performs best on the M4 test set. Outperforming such an oracle model selection procedure is a very difficult task, but this will serve as a benchmark to evaluate the model selection procedure and to determine if the ensemble achieves its forecasting strength through beating this standard or through avoiding selecting poor component models.
 
-% table with results will go here
-% histogram showing distribution of best, average, and oracle models MASE will go here
 
+The model selection procedure employed here performs poorly and in fact worse than a naive approach of using the dominant class Theta model for every time series without bothering to evaluate performance on a holdout set. The Theta model is the best individual model for 37.4 percent of the time series while the selection procedure yields only 33.97 percent accuracy. The 95 percent confidence intervals for the selection procedures accuracy are 33.35 percent to 34.58 percent, and McNemar's test for any improvement over the "no information rate" produces a P-value less than 2e-16 giving us no reason to believe the selection procedure produces any improvement over the naive approach. Indeed the balanced class accuracies hover below 50 percent and other metrics such as sensitivity and specificity show no evidence that the approach can select the correct model or avoid selecting an incorrect model. Table ~\ref{tab:a} shows summarizes other performance metrics of the model selection procedure. 
+
+% latex table generated in R 3.5.1 by xtable 1.8-3 package
+% Sat Oct  6 20:29:03 2018
+\begin{table}[ht]
+\centering
+\begin{adjustbox}{width=1\textwidth}
+\begin{tabular}{rrrrrrrrrrrr}
+  \hline
+ & Sensitivity & Specificity & Pos Pred Value & Neg Pred Value & Precision & Recall & F1 & Prevalence & Detection Rate & Detection Prevalence & Balanced Accuracy \\ 
+  \hline
+Class: Arima & 0.20 & 0.78 & 0.29 & 0.69 & 0.29 & 0.20 & 0.23 & 0.31 & 0.06 & 0.21 & 0.49 \\ 
+  Class: BATS & 0.16 & 0.83 & 0.31 & 0.68 & 0.31 & 0.16 & 0.21 & 0.32 & 0.05 & 0.17 & 0.50 \\ 
+  Class: Theta & 0.61 & 0.37 & 0.36 & 0.61 & 0.36 & 0.61 & 0.46 & 0.37 & 0.23 & 0.62 & 0.49 \\ 
+   \hline
+\end{tabular}
+\end{adjustbox}
+\caption{Performance metrics for the model selection procedure}\label{tab:a}
+\end{table}
+
+% Distribution of log(MASE) for ensemble and selected models
 \begin{figure}[h]
 \centering
 \includegraphics[width=1.0\textwidth]{distribution}
@@ -118,11 +152,11 @@ The MASE produced by the simple ensembling procedure on yearly M4 data will be c
   Theta & 4491 & 4613 & 5218 \\ 
    \hline
 \end{tabular}
-\caption{Reference best individual model on test set versus model from selection procedure}
+\caption{Reference best individual model on test set versus model from selection procedure}\label{tab:b}
 \end{table}
 
 \section{Conclusion}
-It might sound trivial to state that the way to produce good forecasts is to avoid making bad forecasts, but sophisticated models have great difficulty avoiding making bad forecasts. An examination of a simple ensemble forecasting method shows that equal arithmetic averaging of base models can serve of a hedge of risk.
+It might sound trivial to state that the way to produce good forecasts is to avoid making bad forecasts, but choosing a single model that will perform well on the test set based on the models' performance on the train set yields no improvement over the no information rate in the M4 yearly time series data. An examination of a simple ensemble forecasting method shows that equal arithmetic averaging of base models can serve of a hedge of model selection risk and help prevent some large forecasting errors. The source code and scripts used to produce all forecasts and analysis is available on the author's GitHub at (REDACTED URL FOR ANONYMOUS REVIEW).
 
 \section*{Acknowledgments}
 

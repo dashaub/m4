@@ -58,6 +58,8 @@ addtorow$command <- c("& \\multicolumn{3}{c}{Reference} \\\\\n",
 "Selected & Arima & BATS & Theta  \\\\n")
 print(xtable(xtab), add.to.row = addtorow, include.colnames = FALSE)
 
+# Sensitivity, specificity, etc
+xtable(cm$byClass)
 
 ####################################################################################################
 # MASE calculation
