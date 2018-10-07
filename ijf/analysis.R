@@ -51,7 +51,13 @@ oracleModDistribution <- table(Oracle)
 
 # Confusion matrix of selected model vs oracle
 cm <- confusionMatrix(data=factor(Selection), reference=factor(Oracle))
-xtable(cm$table, caption="Reference best model on test set vs model from selection procedure")
+xtab <- xtable(cm$table, caption="Reference best model on test set vs model from selection procedure")
+addtorow <- list()
+addtorow$pos <- list(0, 0)
+addtorow$command <- c("& \\multicolumn{3}{c}{Reference} \\\\\n",
+"Selected & Arima & BATS & Theta  \\\\n")
+print(xtable(xtab), add.to.row = addtorow, include.colnames = FALSE)
+
 
 ####################################################################################################
 # MASE calculation

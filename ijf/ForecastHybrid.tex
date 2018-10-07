@@ -9,6 +9,8 @@
 \usepackage{listings}
 \usepackage{color}
 \usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{array,rotating}
 
 \definecolor{dkgreen}{rgb}{0,0.6,0}
 \definecolor{gray}{rgb}{0.5,0.5,0.5}
@@ -103,24 +105,21 @@ The MASE produced by the simple ensembling procedure on yearly M4 data will be c
 
 % Table of Oracle model selection and best individual model
 % latex table generated in R 3.5.1 by xtable 1.8-3 package
-% Fri Oct  5 10:54:48 2018
-% latex table generated in R 3.5.1 by xtable 1.8-3 package
-% Fri Oct  5 10:57:32 2018
+% Sat Oct  6 19:24:20 2018
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrrr}
   \hline
- & Arima & BATS & Theta \\ 
-  \hline
-Arima & 1397 & 1486 & 1935 \\ 
-  BATS & 1213 & 1197 & 1450 \\ 
+  & \multicolumn{3}{c}{\textbf{Reference}} \\
+ \textbf{Selected} & Arima & BATS & Theta  \\
+ \hline
+ Arima & 1397 & 1486 & 1935 \\ 
+   BATS & 1213 & 1197 & 1450 \\ 
   Theta & 4491 & 4613 & 5218 \\ 
    \hline
 \end{tabular}
-\caption{Reference best model on test set vs model from selection procedure} 
+\caption{Reference best individual model on test set versus model from selection procedure}
 \end{table}
-
-
 
 \section{Conclusion}
 It might sound trivial to state that the way to produce good forecasts is to avoid making bad forecasts, but sophisticated models have great difficulty avoiding making bad forecasts. An examination of a simple ensemble forecasting method shows that equal arithemtic averaging of base models can serve of a hedge of risk.
@@ -131,6 +130,5 @@ This research did not receive any specific grant from funding agencies in the pu
 
 
 % Bibliography.
-\bibliography{refs}
-
+\bibliography{forecastHybrid}
 \end{document}
