@@ -56,12 +56,15 @@
 }
 
 
-@Manual{Forecast,
-  title = {{forecast}: Forecasting functions for time series and linear models},
-  author = {Rob Hyndman and George Athanasopoulos and Christoph Bergmeir and Gabriel Caceres and Leanne Chhay and Mitchell O'Hara-Wild and Fotios Petropoulos and Slava Razbash and Earo Wang and Farah Yasmeen},
-  year = {2018},
-  note = {R package version 8.4},
-  url = {http://pkg.robjhyndman.com/forecast},
+@Article{Forecast,
+  title = {Automatic time series forecasting: the forecast package for {R}},
+  author = {Rob J Hyndman and Yeasmin Khandakar},
+  journal = {Journal of Statistical Software},
+  volume = {26},
+  number = {3},
+  pages = {1--22},
+  year = {2008},
+  url = {http://www.jstatsoft.org/article/view/v027i03},
 }
 
 
@@ -166,4 +169,35 @@ author = "George Athanasopoulos and Rob J. Hyndman and Nikolaos Kourentzes and F
   title = {The Combination of Forecasts},
   volume = {20},
   year = {1969}
+}
+
+@article{THETA,
+title = "The theta model: a decomposition approach to forecasting",
+journal = "International Journal of Forecasting",
+volume = "16",
+number = "4",
+pages = "521 - 530",
+year = "2000",
+note = "The M3- Competition",
+issn = "0169-2070",
+doi = "https://doi.org/10.1016/S0169-2070(00)00066-2",
+url = "http://www.sciencedirect.com/science/article/pii/S0169207000000662",
+author = "V. Assimakopoulos and K. Nikolopoulos",
+keywords = "M3-Competition, Time series, Univariate forecasting method",
+abstract = "This paper presents a new univariate forecasting method. The method is based on the concept of modifying the local curvature of the time-series through a coefficient ‘Theta’ (the Greek letter θ), that is applied directly to the second differences of the data. The resulting series that are created maintain the mean and the slope of the original data but not their curvatures. These new time series are named Theta-lines. Their primary qualitative characteristic is the improvement of the approximation of the long-term behavior of the data or the augmentation of the short-term features, depending on the value of the Theta coefficient. The proposed method decomposes the original time series into two or more different Theta-lines. These are extrapolated separately and the subsequent forecasts are combined. The simple combination of two Theta-lines, the Theta=0 (straight line) and Theta=2 (double local curves) was adopted in order to produce forecasts for the 3003 series of the M3 competition. The method performed well, particularly for monthly series and for microeconomic data."
+}
+
+
+@article{TBATS,
+author = {Alysha M. De Livera and Rob J. Hyndman and Ralph D. Snyder},
+title = {Forecasting Time Series With Complex Seasonal Patterns Using Exponential Smoothing},
+journal = {Journal of the American Statistical Association},
+volume = {106},
+number = {496},
+pages = {1513-1527},
+year  = {2011},
+publisher = {Taylor & Francis},
+doi = {10.1198/jasa.2011.tm09771},
+URL = {https://doi.org/10.1198/jasa.2011.tm09771},
+eprint = {https://doi.org/10.1198/jasa.2011.tm09771}
 }
