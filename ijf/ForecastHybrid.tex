@@ -122,23 +122,24 @@ We might reasonably question why such a simple and well-known technique of avera
 
 Three separate modeling strategies will be examined here. The first is the ensemble approach that was used in the M4 submission and that was described in section 2. The second is a model selection procedure that attempts to choose a single best model for the forecasting period based on the individual model that performs best on a holdout set created in the M4 train data. Since the M4 forecasting horizon is 6 for the yearly data, the final six observations of a time series are removed and each individual component model (\texttt{auto.arima}, \texttt{thetam}, and \texttt{tbats}) estimated on the truncated train time series. Each model then forecasts against the six observations, and the best individual model based on mean absolute scaled error (MASE) is selected and retrained on the full, original train time series. If multiple models have equivalent minimum MASE (as happens for constant, linear trend, or other time series that each model can perfectly predict on the holdout set), a single component model is randomly selected from those with the best MASE. The third and final model for comparison is a reference oracle model that is the individual component model for each time series that performs best on the M4 competition evaluation set. This final model is built not as a legitimate contender for a modeling strategy that could be used in practice for forecasting but rather to evaluate the efficacy of the second model selection procedure and as a benchmark to compare the accuracy of our forecasts against the best we might hope to do in some sense--at least with a single component model from the set of candidate models we examine here.
 
-% latex table generated in R 3.5.1 by xtable 1.8-3 package
-% Sat Oct  6 20:29:03 2018
+% latex table generated in R 3.5.2 by xtable 1.8-3 package
+% Thu Dec 27 15:55:57 2018
 \begin{table}[ht]
 \centering
 \begin{adjustbox}{width=1\textwidth}
-\begin{tabular}{rrrrrrrrrrrr}
+\begin{tabular}{rrrrrrrr}
   \hline
- & Sensitivity/Recall & Specificity & Pos Pred Value & Neg Pred Value & Precision & Prevalence &  Balanced Accuracy \\ 
+ & Sensitivity/Recall & Specificity & Pos Pred Value & Neg Pred Value & Precision & Prevalence & Balanced Accuracy \\ 
   \hline
-Class: Arima & 0.20 & 0.78 & 0.29 & 0.69 & 0.29 & 0.31 & 0.49 \\ 
-  Class: BATS & 0.16 & 0.83 & 0.31 & 0.68 & 0.31 & 0.32 & 0.50 \\ 
-  Class: Theta & 0.61 & 0.37 & 0.36 & 0.61 & 0.36 & 0.37 & 0.49 \\ 
+Arima & 0.20 & 0.78 & 0.29 & 0.69 & 0.29 & 0.31 & 0.49 \\ 
+  BATS & 0.16 & 0.83 & 0.31 & 0.68 & 0.31 & 0.32 & 0.50 \\ 
+  Theta & 0.61 & 0.37 & 0.36 & 0.61 & 0.36 & 0.37 & 0.49 \\ 
    \hline
 \end{tabular}
 \end{adjustbox}
 \caption{Performance metrics for the model selection procedures}\label{tab:a}
 \end{table}
+
 
 % Distribution of log(MASE) for ensemble and selected models
 \begin{figure}[h]

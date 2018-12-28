@@ -1,12 +1,15 @@
-# devtools::install_github("carlanetto/M4comp2018")
-library(M4comp2018)
+if(!require(M4comp2018)){
+  devtools::install_github("carlanetto/M4comp2018")
+  library(M4comp2018)
+}
+library(caret)
 library(pbapply)
 library(forecastHybrid)
 library(xtable)
 library(ggplot2)
 library(reshape2)
 
-numCores <- 2
+numCores <- 4
 
 ####################################################################################################
 # Forecasts
@@ -58,8 +61,15 @@ addtorow$command <- c("& \\multicolumn{3}{c}{Reference} \\\\\n",
 "Selected & Arima & BATS & Theta  \\\\n")
 print(xtable(xtab), add.to.row = addtorow, include.colnames = FALSE)
 
-# Sensitivity, specificity, etc
-xtable(cm$byClass)
+# Sensitivity, specificity, etc and drop columns not to include in article
+cm <- cm$byClass
+cm <- cm[, colnames(cm) != "Recall"]
+cm <- cm[, colnames(cm) != "F1"]
+cm <- cm[, colnames(cm) != "Detection Rate"]
+cm <- cm[, colnames(cm) != "Detection Prevalence"]
+colnames(cm)[colnames(cm) == "Sensitivity"] <- "Sensitivity/Recall"
+rownames(cm) <- gsub("Class: ", "", rownames(cm))
+print(xtable(cm))
 
 ####################################################################################################
 # MASE calculation
