@@ -1,10 +1,13 @@
 library(forecastHybrid)
 library(data.table)
 library(pbapply)
-library(M4comp2018)
+if(!require(M4comp2018)){
+  devtools::install_github("carlanetto/M4comp2018")
+  library(M4comp2018)
+}
 
 currentSeries <- "Yearly"
-numCores <- 1
+numCores <- 6
 
 
 ####################################################################################################
