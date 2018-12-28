@@ -54,6 +54,7 @@ names(dat) <- seriesNames
 # Fit the ensemble model. This includes both the model used in M4 forecasting as well as the
 # individual component models that will be compared. These are the final fit models
 models <- ifelse(currentSeries == "Monthly", "fs", "aft")
+message("Fitting ensemble model")
 mods <- pblapply(dat, function(x) hybridModel(x, models = models, verbose = FALSE), cl = numCores)
 save(mods, file = "mods.RData")
 gc()
@@ -120,6 +121,7 @@ modelsAndData <- packageModelsAndData(mods, m4Data)
 rm(mods, m4Data)
 gc()
 
+message("Selecting oracle reference model")
 oracleMods <- pblapply(modelsAndData, function(x) chooseBestModel(x), cl = numCores)
 save(oracleMods, file = "oracleMods.RData")
 rm(oracleMods)
@@ -133,6 +135,7 @@ gc()
 
 # Fit again on the subset of the data. This is the data that will be used along with the holdout
 # set for model selection
+message("Fitting ensemble model on subset of data")
 subsetMods <- pblapply(dat, function(x) hybridModel(tail(x, -h), models = models, verbose = FALSE),
                        cl = numCores)
 save(subsetMods, file = "subsetMods.RData")
@@ -147,5 +150,6 @@ modelsAndData <- packageModelsAndData(subsetMods, dat)
 rm(subsetMods)
 gc()
 
+message("Selecting best model on subset of data")
 bestMods <- pblapply(modelsAndData, function(x) chooseBestModel(x), cl = numCores)
 save(bestMods, file = "bestMods.RData")
