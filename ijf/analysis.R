@@ -9,7 +9,7 @@ library(xtable)
 library(ggplot2)
 library(reshape2)
 
-numCores <- 4
+numCores <- 6
 
 ####################################################################################################
 # Forecasts
