@@ -53,13 +53,13 @@
 %% AUTHORS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Leave this section commented out so that the paper is blinded for review.
 %% Group authors per affiliation:
-% \author[ss]{David Shaub\corref{cor}}
-% \address[ss]{Harvard University Extension School}
+\author[ss]{David Shaub\corref{cor}}
+\address[ss]{Harvard University Extension School}
 
 
 %% Only give the email address of the corresponding author
-% \cortext[cor]{Corresponding author}
-% \ead{davidshaub@g.harvard.edu}
+\cortext[cor]{Corresponding author}
+\ead{davidshaub@g.harvard.edu}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -194,7 +194,7 @@ This simple combination approach can be of particular interest to business users
 
 Finally, we might wonder about possible improvements to the combination weights used in the M4 submission and described in this article. Indeed the "forecastHybrid" package can use alternative combination weight strategies of user-supplied weights, in-sample error weights, or cross validated weights. The possibility of user-supplied weights would allow some exogenous weight selection algorithm to run and then conveniently produce forecasts by supplying these to the \texttt{hybridModel} function. There is reason to believe that weights selected by cross validation would perform better than this simple averaging approach since it would avoid overfitting problems typically experienced with weight selection on the train set and the underfitting that comes from giving performant models too little weight in the ensemble. We could also imagine a scenario where separate model weights apply to each forecast horizon (e.g. an ARIMA model receives more weight to capture short-term forecasting dynamics, but for a longer horizons a simple seasonal decomposition model receives more weight due to its avoidance of explosive-growth forecasts that might come from the ARIMA model).
 
-The source code and scripts used to produce all forecasts and analysis is available on the author's GitHub at (REDACTED URL FOR ANONYMOUS REVIEW).
+The source code and scripts used to produce all forecasts and analysis is available on the author's GitHub at https://github.com/dashaub/m4.
 
 \section*{Acknowledgments}
 
